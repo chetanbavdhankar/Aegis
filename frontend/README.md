@@ -11,7 +11,7 @@ This folder contains all HTML-based dashboard interfaces for the **AEGIS Crisis 
 | `index.html` | AEGIS — Crisis Intelligence | Minimal black / monochrome | ✅ Live (`/api/alerts`, `/api/broadcast`) | **Primary** |
 | `myversion.html` | AEGIS OS // Tactical Crisis Terminal | Dark OS / military terminal | Mock data | Design prototype |
 | `mynewversion.html` | AEGIS // Crisis Management Platform | Dark glass / modern | Mock data | Design prototype |
-| `index-cyberpunk.html` | AEGIS Crisis Intelligence Terminal | Cyberpunk / neon teal | Mock data | Design prototype |
+| `index-cyberpunk.html` | AEGIS Crisis Intelligence Terminal | Cyberpunk / neon teal | ✅ Live (`/api/alerts`, `/api/broadcast`) | API-connected prototype |
 | `cyberpunkversion.html` | AEGIS Crisis Intelligence Terminal | Cyberpunk / neon amber | Mock data | Design prototype |
 
 ---
@@ -62,7 +62,7 @@ The dashboard communicates with the Flask server (`backend/app.py`). The full AP
 
 ## Design Prototypes
 
-All prototype files are fully functional standalone HTML dashboards using **mock/simulated alert data**. They were created during the UI design phase to explore different visual identities for AEGIS. None require a running backend.
+Most prototype files are fully functional standalone HTML dashboards. They were created during the UI design phase to explore different visual identities for AEGIS. `index-cyberpunk.html` has since been upgraded with live API integration; the remaining three still use mock/simulated data and require no running backend.
 
 ### `myversion.html` — Tactical OS Terminal
 - Boot sequence animation on load with scrolling log output
@@ -78,12 +78,14 @@ All prototype files are fully functional standalone HTML dashboards using **mock
 - Toast notification system for incoming alerts
 - Real-time clock
 
-### `index-cyberpunk.html` — Cyberpunk Neon (Teal)
+### `index-cyberpunk.html` — Cyberpunk Neon (Teal) ✅ API-connected
+- Full live API integration — same endpoint surface as `index.html` (`/api/alerts`, `/api/alerts/<id>/messages`, `/api/alerts/<id>/logs`, `/api/alerts/<id>/status`, `/api/broadcast`, `/api/send_message`)
+- Severity field mapping from backend numeric (1–5) to UI labels (Critical / Warning / Safe)
+- Dynamic Leaflet markers from live API data replacing previous mock pins
 - High-contrast teal-on-dark cyberpunk palette
-- Alert severity progress bars (Critical / Warning / Safe)
-- Live trend chart
+- Alert severity progress bars, verified alert counter, real-time statistics bar
 - Emergency broadcast input panel
-- Verified alert counter and real-time statistics bar
+- Auto-refresh with state management
 
 ### `cyberpunkversion.html` — Cyberpunk Neon (Amber/Orange)
 - Warm amber/orange cyberpunk color scheme
