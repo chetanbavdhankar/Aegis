@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+<<<<<<< HEAD
 
 <head>
   <meta charset="UTF-8">
@@ -2808,3 +2809,2316 @@
 </body>
 
 </html>
+=======
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AEGIS — Every Voice, Heard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=IBM+Plex+Mono:wght@300;400;500&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;0,700;1,300;1,400&family=Crimson+Text:ital,wght@0,400;0,600;1,400;1,600&display=swap" rel="stylesheet">
+
+<style>
+  /* ═══════════════════════════════════════════
+     DESIGN TOKENS
+  ═══════════════════════════════════════════ */
+  :root {
+    --bg:      #030812;
+    --panel:   #07101f;
+    --panel2:  #050d1a;
+    --border:  rgba(0,210,255,.13);
+    --cyan:    #00D2FF;
+    --red:     #FF4D4D;
+    --green:   #00FF99;
+    --gold:    #FFB700;
+    --orange:  #FF6B35;
+    --text:    #DDE8FF;
+    --text2:   #6B85B0;
+    --text3:   #1e3050;
+    --display: 'Orbitron', monospace;
+    --mono:    'IBM Plex Mono', monospace;
+    --body:    'IBM Plex Sans', sans-serif;
+    --serif:   'Crimson Text', serif;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; height: 100%; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--body);
+    font-weight: 300;
+    overflow: hidden;
+    height: 100%;
+    background-image:
+      linear-gradient(rgba(0,210,255,.016) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,210,255,.016) 1px, transparent 1px);
+    background-size: 60px 60px;
+  }
+
+  ::-webkit-scrollbar { width: 2px; }
+  ::-webkit-scrollbar-thumb { background: rgba(0,210,255,.25); }
+
+  /* ═══════════════════════════════════════════
+     SNAP SCROLL WRAPPER
+  ═══════════════════════════════════════════ */
+  #snap-wrapper {
+    height: 100vh;
+    overflow-y: scroll;
+    scroll-snap-type: y mandatory;
+    scroll-behavior: smooth;
+  }
+  #snap-wrapper::-webkit-scrollbar { width: 2px; }
+  #snap-wrapper::-webkit-scrollbar-thumb { background: rgba(0,210,255,.25); }
+
+  /* ═══════════════════════════════════════════
+     DOT NAV
+  ═══════════════════════════════════════════ */
+  .dot-nav {
+    position: fixed;
+    right: 24px;
+    left: auto;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 300;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    align-items: center;
+    background: none;
+    border: none;
+    padding: 0;
+    backdrop-filter: none;
+  }
+  .dot-nav-item {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    padding: 4px;
+  }
+  .dot-nav-item .dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: rgba(0,210,255,.2);
+    border: 1px solid rgba(0,210,255,.3);
+    transition: all .35s cubic-bezier(.22,1,.36,1);
+  }
+  .dot-nav-item.active .dot {
+    width: 9px;
+    height: 9px;
+    background: var(--cyan);
+    box-shadow: 0 0 12px rgba(0,210,255,.65);
+    border-color: var(--cyan);
+  }
+  .dot-nav-item .dot-label {
+    position: absolute;
+    right: 20px;
+    font-family: var(--mono);
+    font-size: .75rem;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--text2);
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .2s, color .2s;
+    background: rgba(3,8,18,.88);
+    padding: 3px 9px;
+    border-radius: 3px;
+    border: 1px solid var(--border);
+  }
+  .dot-nav-item:hover .dot-label { opacity: 1; }
+  .dot-nav-item.active .dot-label { opacity: 1; color: var(--cyan); }
+
+  /* ═══════════════════════════════════════════
+     ANIMATIONS
+  ═══════════════════════════════════════════ */
+  @keyframes hero-in {
+    from { opacity: 0; letter-spacing: .7em; filter: blur(12px); }
+    to   { opacity: 1; letter-spacing: .06em; filter: blur(0); }
+  }
+  @keyframes fade-up {
+    from { opacity: 0; transform: translateY(32px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes fade-in {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+  @keyframes red-pulse {
+    0%, 100% { text-shadow: 0 0 60px rgba(255,77,77,.6), 0 0 120px rgba(255,77,77,.25); }
+    50%       { text-shadow: 0 0 100px rgba(255,77,77,.9), 0 0 200px rgba(255,77,77,.4); }
+  }
+  @keyframes cyan-pulse {
+    0%, 100% { box-shadow: 0 0 30px rgba(0,210,255,.15); }
+    50%       { box-shadow: 0 0 60px rgba(0,210,255,.4); }
+  }
+  @keyframes scan {
+    0%   { top: -2px; opacity: .9; }
+    100% { top: 100%; opacity: 0; }
+  }
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: .2; }
+  }
+  @keyframes flow {
+    0%    { width: 0; opacity: 0; }
+    20%   { opacity: 1; }
+    100%  { width: 100%; opacity: 1; }
+  }
+  @keyframes ping-ring {
+    0%   { transform: translate(-50%,-50%) scale(.6); opacity: 1; }
+    100% { transform: translate(-50%,-50%) scale(2.2); opacity: 0; }
+  }
+  @keyframes waveform {
+    0%, 100% { transform: scaleY(1); }
+    50%       { transform: scaleY(0.3); }
+  }
+  @keyframes slide-up {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes gap-draw {
+    from { width: 0; }
+    to   { width: 100%; }
+  }
+  @keyframes float-y {
+    0%, 100% { transform: translateY(0); }
+    50%       { transform: translateY(-8px); }
+  }
+
+  /* ═══════════════════════════════════════════
+     SCROLL REVEAL
+  ═══════════════════════════════════════════ */
+  .reveal {
+    opacity: 0;
+    transform: translateY(30px);
+    transition: opacity .75s cubic-bezier(.22,1,.36,1), transform .75s cubic-bezier(.22,1,.36,1);
+  }
+  .reveal.visible { opacity: 1; transform: none; }
+
+  .reveal-fast {
+    opacity: 0;
+    transform: translateY(16px);
+    transition: opacity .45s ease, transform .45s ease;
+  }
+  .reveal-fast.visible { opacity: 1; transform: none; }
+
+  /* ═══════════════════════════════════════════
+     TYPOGRAPHY UTILITIES
+  ═══════════════════════════════════════════ */
+  .label {
+    font-family: var(--mono);
+    font-size: .92rem;
+    font-weight: 400;
+    letter-spacing: .22em;
+    text-transform: uppercase;
+    color: var(--cyan);
+    opacity: .7;
+  }
+  .label-dim {
+    font-family: var(--mono);
+    font-size: .9rem;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    color: var(--text2);
+  }
+
+  /* ═══════════════════════════════════════════
+     NAV
+  ═══════════════════════════════════════════ */
+  nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 18px 48px;
+    background: rgba(3,8,18,.6);
+    backdrop-filter: blur(24px);
+    border-bottom: 1px solid var(--border);
+  }
+  .nav-logo {
+    font-family: var(--display);
+    font-size: 1.08rem;
+    font-weight: 700;
+    letter-spacing: .25em;
+    color: var(--cyan);
+  }
+  .nav-badge {
+    font-family: var(--mono);
+    font-size: .87rem;
+    letter-spacing: .16em;
+    color: var(--text2);
+    padding: 4px 12px;
+    border: 1px solid var(--border);
+    border-radius: 2px;
+  }
+
+  /* ═══════════════════════════════════════════
+     HERO
+  ═══════════════════════════════════════════ */
+  #hero {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 80px 24px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* radial vignette */
+  #hero::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse 70% 60% at 50% 50%, rgba(255,77,77,.06) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .hero-eyebrow {
+    font-family: var(--mono);
+    font-size: .9rem;
+    letter-spacing: .3em;
+    text-transform: uppercase;
+    color: var(--text2);
+    margin-bottom: 52px;
+    animation: fade-in .8s .2s both;
+  }
+
+  .hero-death-count {
+    font-family: var(--display);
+    font-size: clamp(9rem, 22vw, 18rem);
+    font-weight: 900;
+    line-height: .88;
+    color: var(--red);
+    animation: hero-in 1.2s .5s both, red-pulse 4s 2s ease-in-out infinite;
+    will-change: text-shadow;
+  }
+
+  .hero-sub {
+    margin-top: 24px;
+    font-family: var(--body);
+    font-size: clamp(1rem, 2.2vw, 1.4rem);
+    font-weight: 300;
+    letter-spacing: .04em;
+    color: rgba(221,232,255,.65);
+    animation: fade-up .8s 1.4s both;
+  }
+
+  .hero-divider {
+    width: 1px;
+    height: 60px;
+    background: linear-gradient(to bottom, transparent, var(--cyan), transparent);
+    margin: 48px auto;
+    animation: fade-in 1s 2s both;
+  }
+
+  .hero-statement {
+    max-width: 640px;
+    font-size: clamp(1.25rem, 2.5vw, 1.65rem);
+    font-weight: 300;
+    line-height: 1.6;
+    color: var(--text);
+    animation: fade-up .9s 2.2s both;
+  }
+  .hero-statement strong {
+    font-weight: 500;
+    color: #fff;
+  }
+
+  .scroll-hint {
+    position: absolute;
+    bottom: 36px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    animation: fade-in 1s 3s both;
+  }
+  .scroll-hint span {
+    font-family: var(--mono);
+    font-size: 1.08rem;
+    letter-spacing: .2em;
+    color: var(--text2);
+  }
+  .scroll-arrow {
+    width: 1px;
+    height: 32px;
+    background: linear-gradient(to bottom, var(--cyan), transparent);
+    animation: float-y 2s ease-in-out infinite;
+  }
+
+  /* ═══════════════════════════════════════════
+     SECTION WRAPPER
+  ═══════════════════════════════════════════ */
+  section {
+    height: 100vh;
+    scroll-snap-align: start;
+    scroll-snap-stop: always;
+    overflow: hidden;
+    padding: 72px 24px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  .container {
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+  .container-narrow {
+    max-width: 760px;
+    margin: 0 auto;
+  }
+
+  /* ═══════════════════════════════════════════
+     THE GAP SECTION
+  ═══════════════════════════════════════════ */
+  #gap-section {
+    background: var(--panel2);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .gap-header {
+    text-align: center;
+    margin-bottom: 32px;
+  }
+  .gap-header h2 {
+    font-family: var(--display);
+    font-size: clamp(1.6rem, 3.5vw, 2.4rem);
+    font-weight: 700;
+    letter-spacing: .08em;
+    color: #fff;
+    margin-top: 16px;
+  }
+
+  .timeline-visual {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    margin: 24px 0;
+    position: relative;
+  }
+
+  .time-node {
+    text-align: center;
+    flex-shrink: 0;
+  }
+  .time-value {
+    font-family: var(--display);
+    font-size: clamp(2rem, 5vw, 3.5rem);
+    font-weight: 700;
+    letter-spacing: .04em;
+  }
+  .time-value.am { color: var(--gold); }
+  .time-value.pm { color: var(--red); }
+  .time-label {
+    font-family: var(--mono);
+    font-size: .9rem;
+    letter-spacing: .18em;
+    color: var(--text2);
+    margin-top: 8px;
+  }
+
+  .gap-bar {
+    flex: 1;
+    max-width: 340px;
+    margin: 0 32px;
+    position: relative;
+  }
+  .gap-bar-track {
+    height: 2px;
+    background: rgba(255,77,77,.15);
+    border-radius: 1px;
+    position: relative;
+    overflow: visible;
+  }
+  .gap-bar-track::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    height: 100%;
+    background: linear-gradient(90deg, var(--gold), var(--red));
+    animation: gap-draw 1.8s 0.3s cubic-bezier(.77,0,.18,1) both;
+  }
+  .gap-center-label {
+    text-align: center;
+    margin-top: 10px;
+    font-family: var(--display);
+    font-size: clamp(2.4rem, 6vw, 4.5rem);
+    font-weight: 900;
+    color: var(--red);
+    letter-spacing: -.01em;
+  }
+  .gap-center-sub {
+    text-align: center;
+    font-family: var(--mono);
+    font-size: .95rem;
+    letter-spacing: .2em;
+    color: var(--text2);
+    margin-top: 8px;
+  }
+
+  .gap-body {
+    max-width: 680px;
+    margin: 24px auto 0;
+    text-align: center;
+  }
+  .gap-body p {
+    font-size: 1.05rem;
+    line-height: 1.65;
+    color: rgba(221,232,255,.7);
+    margin-bottom: 12px;
+  }
+
+  .language-reveal {
+    margin-top: 72px;
+    text-align: center;
+  }
+  .language-reveal-label {
+    font-family: var(--mono);
+    font-size: .9rem;
+    letter-spacing: .3em;
+    color: var(--text2);
+    margin-bottom: 28px;
+  }
+  .language-reveal h3 {
+    font-family: var(--display);
+    font-size: clamp(3rem, 9vw, 7rem);
+    font-weight: 900;
+    letter-spacing: .06em;
+    color: #fff;
+    text-shadow: 0 0 80px rgba(0,210,255,.3);
+  }
+  /* Three-problem grid */
+  .three-problems {
+    max-width: 800px;
+    margin: 24px auto 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .problem-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 20px;
+    padding: 18px 28px;
+    border-bottom: 1px solid var(--border);
+    transition: background .25s;
+  }
+  .problem-item:last-child { border-bottom: none; }
+  .problem-item:hover { background: rgba(0,210,255,.025); }
+  .problem-num {
+    font-family: var(--display);
+    font-size: 1.7rem;
+    font-weight: 900;
+    letter-spacing: .04em;
+    color: var(--red);
+    opacity: .35;
+    flex-shrink: 0;
+    line-height: 1;
+    min-width: 52px;
+  }
+  .problem-title {
+    font-family: var(--display);
+    font-size: 1.05rem;
+    font-weight: 700;
+    letter-spacing: .06em;
+    color: #fff;
+    margin-bottom: 10px;
+  }
+  .problem-desc {
+    font-size: 1rem;
+    line-height: 1.7;
+    color: var(--text2);
+  }
+
+  .language-reveal p {
+    margin-top: 24px;
+    font-size: 1.1rem;
+    color: var(--text2);
+    max-width: 560px;
+    margin-left: auto;
+    margin-right: auto;
+    line-height: 1.7;
+  }
+
+  /* ═══════════════════════════════════════════
+     MARIA SECTION
+  ═══════════════════════════════════════════ */
+  #maria-section {
+    background: var(--bg);
+  }
+
+  .maria-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 80px;
+    align-items: center;
+  }
+
+  .maria-copy h2 {
+    font-family: var(--display);
+    font-size: clamp(1.5rem, 3vw, 2.2rem);
+    font-weight: 700;
+    letter-spacing: .06em;
+    line-height: 1.25;
+    color: #fff;
+    margin: 16px 0 28px;
+  }
+  .maria-copy p {
+    font-size: 1.05rem;
+    line-height: 1.8;
+    color: rgba(221,232,255,.65);
+    margin-bottom: 20px;
+  }
+  .maria-copy p strong {
+    color: var(--text);
+    font-weight: 500;
+  }
+  .telegram-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(0,210,255,.07);
+    border: 1px solid rgba(0,210,255,.2);
+    border-radius: 4px;
+    padding: 6px 14px;
+    font-family: var(--mono);
+    font-size: .97rem;
+    letter-spacing: .12em;
+    color: var(--cyan);
+    margin-top: 8px;
+  }
+  .telegram-dot {
+    width: 7px; height: 7px;
+    background: var(--cyan);
+    border-radius: 50%;
+    animation: blink 1.4s infinite;
+  }
+
+  /* Telegram phone mockup */
+  .phone-wrap {
+    display: flex;
+    justify-content: center;
+  }
+  .phone {
+    width: 260px;
+    background: #0a1628;
+    border: 1px solid rgba(0,210,255,.25);
+    border-radius: 24px;
+    overflow: hidden;
+    box-shadow: 0 40px 80px rgba(0,0,0,.6), 0 0 60px rgba(0,210,255,.08);
+    animation: float-y 5s ease-in-out infinite;
+  }
+  .phone-header {
+    background: #0f1f38;
+    padding: 14px 18px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-bottom: 1px solid rgba(0,210,255,.1);
+  }
+  .phone-avatar {
+    width: 32px; height: 32px;
+    background: linear-gradient(135deg, var(--cyan), #0066ff);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--display);
+    font-size: 1.08rem;
+    font-weight: 700;
+    color: #000;
+  }
+  .phone-name {
+    font-family: var(--body);
+    font-size: 1.05rem;
+    font-weight: 500;
+    color: var(--text);
+  }
+  .phone-status {
+    font-family: var(--mono);
+    font-size: 1.05rem;
+    color: var(--green);
+    letter-spacing: .08em;
+  }
+  .phone-status::before {
+    content: '●';
+    margin-right: 4px;
+    animation: blink 1.5s infinite;
+  }
+
+  .phone-body {
+    padding: 20px 14px;
+    min-height: 240px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .msg-bubble {
+    max-width: 80%;
+    border-radius: 12px 12px 12px 2px;
+    padding: 10px 14px;
+    position: relative;
+  }
+  .msg-bubble.out {
+    background: #1a4a7a;
+    align-self: flex-end;
+    border-radius: 12px 12px 2px 12px;
+  }
+  .msg-bubble.in {
+    background: #0f2038;
+    border: 1px solid rgba(0,210,255,.15);
+  }
+  .msg-text {
+    font-size: 1.05rem;
+    line-height: 1.45;
+    color: #e0ecff;
+  }
+  .msg-text .de { font-weight: 500; }
+  .msg-text .en {
+    font-family: var(--mono);
+    font-size: .92rem;
+    color: var(--text2);
+    margin-top: 3px;
+  }
+  .msg-meta {
+    font-family: var(--mono);
+    font-size: 1.05rem;
+    color: rgba(107,133,176,.6);
+    text-align: right;
+    margin-top: 4px;
+  }
+  .location-pin {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255,77,77,.1);
+    border: 1px solid rgba(255,77,77,.2);
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-family: var(--mono);
+    font-size: .9rem;
+    color: var(--red);
+  }
+
+  .msg-bubble.aegis {
+    background: linear-gradient(135deg, rgba(0,210,255,.1), rgba(0,255,153,.08));
+    border: 1px solid rgba(0,210,255,.2);
+    max-width: 90%;
+  }
+  .aegis-label {
+    font-family: var(--mono);
+    font-size: 1.05rem;
+    letter-spacing: .15em;
+    color: var(--cyan);
+    margin-bottom: 4px;
+  }
+
+  /* ═══════════════════════════════════════════
+     AEGIS PRODUCT REVEAL
+  ═══════════════════════════════════════════ */
+  #product-section {
+    background: var(--panel2);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .product-header {
+    text-align: center;
+    margin-bottom: 80px;
+  }
+  .product-name {
+    font-family: var(--display);
+    font-size: clamp(3.5rem, 10vw, 8rem);
+    font-weight: 900;
+    letter-spacing: .12em;
+    color: var(--cyan);
+    text-shadow: 0 0 80px rgba(0,210,255,.4);
+    line-height: 1;
+  }
+  .product-full-name {
+    font-family: var(--mono);
+    font-size: 1rem;
+    letter-spacing: .22em;
+    color: var(--text2);
+    margin-top: 16px;
+  }
+  .product-tagline {
+    margin-top: 32px;
+    font-size: clamp(1.1rem, 2.2vw, 1.5rem);
+    font-weight: 300;
+    color: var(--text);
+    line-height: 1.5;
+  }
+
+  /* capability cards */
+  .cap-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    margin-top: 64px;
+  }
+  .cap-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 32px 28px;
+    position: relative;
+    overflow: hidden;
+    transition: border-color .3s;
+  }
+  .cap-card:hover { border-color: rgba(0,210,255,.35); }
+  .cap-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+  }
+  .cap-card.cyan::before  { background: var(--cyan); }
+  .cap-card.green::before { background: var(--green); }
+  .cap-card.gold::before  { background: var(--gold); }
+
+  .cap-num {
+    font-family: var(--display);
+    font-size: .95rem;
+    font-weight: 700;
+    letter-spacing: .2em;
+    margin-bottom: 20px;
+  }
+  .cap-num.cyan  { color: var(--cyan); }
+  .cap-num.green { color: var(--green); }
+  .cap-num.gold  { color: var(--gold); }
+
+  .cap-title {
+    font-family: var(--display);
+    font-size: 1.05rem;
+    font-weight: 600;
+    letter-spacing: .05em;
+    color: #fff;
+    margin-bottom: 12px;
+  }
+  .cap-desc {
+    font-size: .9rem;
+    line-height: 1.7;
+    color: var(--text2);
+  }
+  .cap-tech {
+    margin-top: 16px;
+    font-family: var(--mono);
+    font-size: .87rem;
+    letter-spacing: .1em;
+    color: rgba(107,133,176,.6);
+  }
+
+  /* ═══════════════════════════════════════════
+     DASHBOARD MOCKUP
+  ═══════════════════════════════════════════ */
+  #dashboard-preview {
+    padding: 62px 24px 10px;
+    background: var(--bg);
+    text-align: center;
+    justify-content: flex-start;
+  }
+  .dash-intro {
+    max-width: 600px;
+    margin: 0 auto 12px;
+  }
+  .dash-intro h2 {
+    font-family: var(--display);
+    font-size: clamp(1.4rem, 3vw, 2rem);
+    font-weight: 700;
+    letter-spacing: .07em;
+    color: #fff;
+    margin: 10px 0 14px;
+  }
+  .dash-intro p {
+    font-size: 1.05rem;
+    line-height: 1.75;
+    color: var(--text2);
+  }
+
+  .dash-frame {
+    max-width: 1000px;
+    margin: 0 auto;
+    background: var(--panel);
+    border: 1px solid rgba(0,210,255,.22);
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 60px 120px rgba(0,0,0,.7), 0 0 80px rgba(0,210,255,.06);
+    animation: cyan-pulse 4s ease-in-out infinite;
+    position: relative;
+  }
+
+  .dash-topbar {
+    background: #050e1d;
+    border-bottom: 1px solid rgba(0,210,255,.12);
+    padding: 10px 18px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .dash-dots span {
+    display: inline-block;
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    margin-right: 4px;
+  }
+  .dash-dots .d1 { background: var(--red); opacity: .7; }
+  .dash-dots .d2 { background: var(--gold); opacity: .7; }
+  .dash-dots .d3 { background: var(--green); opacity: .7; }
+  .dash-url {
+    flex: 1;
+    text-align: center;
+    font-family: var(--mono);
+    font-size: .87rem;
+    color: var(--text2);
+    letter-spacing: .06em;
+  }
+
+  .dash-inner {
+    display: grid;
+    grid-template-columns: 260px 1fr;
+    min-height: 180px;
+  }
+
+  .dash-sidebar {
+    background: #050e1d;
+    border-right: 1px solid rgba(0,210,255,.1);
+    padding: 20px 0;
+  }
+  .sidebar-head {
+    padding: 0 18px 16px;
+    border-bottom: 1px solid rgba(0,210,255,.08);
+    margin-bottom: 12px;
+  }
+  .sidebar-head h4 {
+    font-family: var(--display);
+    font-size: .9rem;
+    font-weight: 700;
+    letter-spacing: .2em;
+    color: var(--cyan);
+  }
+  .sidebar-head p {
+    font-family: var(--mono);
+    font-size: 1.05rem;
+    color: var(--text2);
+    margin-top: 2px;
+  }
+
+  .alert-card {
+    margin: 6px 12px;
+    background: var(--panel);
+    border: 1px solid rgba(255,77,77,.25);
+    border-left: 3px solid var(--red);
+    border-radius: 6px;
+    padding: 10px 12px;
+    cursor: default;
+    transition: border-color .2s;
+  }
+  .alert-card.active {
+    background: rgba(255,77,77,.06);
+    border-color: rgba(255,77,77,.5);
+    box-shadow: 0 0 20px rgba(255,77,77,.1);
+  }
+  .alert-card.verified { border-left-color: var(--green); }
+  .alert-card-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 4px;
+  }
+  .alert-type {
+    font-family: var(--mono);
+    font-size: 1.05rem;
+    letter-spacing: .1em;
+    color: var(--red);
+    text-transform: uppercase;
+  }
+  .alert-type.verified { color: var(--green); }
+  .severity-badge {
+    font-family: var(--mono);
+    font-size: 1.02rem;
+    background: rgba(255,77,77,.2);
+    color: var(--red);
+    border-radius: 3px;
+    padding: 2px 6px;
+  }
+  .severity-badge.v { background: rgba(0,255,153,.15); color: var(--green); }
+  .alert-msg {
+    font-size: .97rem;
+    color: var(--text2);
+    margin-bottom: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .alert-meta {
+    font-family: var(--mono);
+    font-size: 1.05rem;
+    color: var(--text3);
+    display: flex;
+    gap: 8px;
+  }
+  .verify-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-family: var(--mono);
+    font-size: 1.05rem;
+    background: rgba(0,255,153,.12);
+    color: var(--green);
+    border: 1px solid rgba(0,255,153,.25);
+    border-radius: 3px;
+    padding: 2px 6px;
+    margin-top: 4px;
+  }
+
+  .dash-main {
+    position: relative;
+    background: #040b18;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .map-area {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+    min-height: 100px;
+    background:
+      radial-gradient(ellipse 60% 50% at 48% 45%, rgba(0,210,255,.04) 0%, transparent 70%),
+      linear-gradient(rgba(0,210,255,.02) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,210,255,.02) 1px, transparent 1px);
+    background-size: auto, 30px 30px, 30px 30px;
+  }
+
+  /* Map pins */
+  .map-pin {
+    position: absolute;
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    transform: translate(-50%,-50%);
+  }
+  .map-pin::before {
+    content: '';
+    position: absolute;
+    top: 50%; left: 50%;
+    width: 100%; height: 100%;
+    border-radius: 50%;
+    animation: ping-ring 1.8s ease-out infinite;
+  }
+  .map-pin.red { background: var(--red); box-shadow: 0 0 8px var(--red); }
+  .map-pin.red::before { border: 1.5px solid var(--red); }
+  .map-pin.amber { background: var(--gold); box-shadow: 0 0 8px var(--gold); }
+  .map-pin.amber::before { border: 1.5px solid var(--gold); animation-delay: .5s; }
+  .map-pin.cyan { background: var(--cyan); box-shadow: 0 0 8px var(--cyan); }
+  .map-pin.cyan::before { border: 1.5px solid var(--cyan); animation-delay: 1s; }
+
+  .map-label {
+    position: absolute;
+    font-family: var(--mono);
+    font-size: 1.02rem;
+    letter-spacing: .1em;
+    color: var(--text2);
+    white-space: nowrap;
+  }
+
+  /* Scan line */
+  .map-area::after {
+    content: '';
+    position: absolute;
+    left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(0,210,255,.4), transparent);
+    animation: scan 3s linear infinite;
+    pointer-events: none;
+  }
+
+  .dash-stats-row {
+    border-top: 1px solid rgba(0,210,255,.08);
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    padding: 14px 20px;
+    gap: 16px;
+  }
+  .dash-stat {
+    text-align: center;
+  }
+  .dash-stat-val {
+    font-family: var(--display);
+    font-size: .95rem;
+    font-weight: 700;
+    letter-spacing: .04em;
+  }
+  .dash-stat-val.red   { color: var(--red); }
+  .dash-stat-val.green { color: var(--green); }
+  .dash-stat-val.cyan  { color: var(--cyan); }
+  .dash-stat-val.gold  { color: var(--gold); }
+  .dash-stat-lbl {
+    font-family: var(--mono);
+    font-size: 1.02rem;
+    letter-spacing: .12em;
+    color: var(--text2);
+    margin-top: 2px;
+  }
+
+  /* ═══════════════════════════════════════════
+     THE VOICE SECTION
+  ═══════════════════════════════════════════ */
+  #voice-section {
+    padding: 76px 24px 36px;
+    background: var(--panel2);
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    text-align: center;
+    justify-content: flex-start;
+  }
+
+  .voice-setup {
+    font-family: var(--mono);
+    font-size: .92rem;
+    letter-spacing: .25em;
+    color: var(--text2);
+    margin-bottom: 12px;
+    text-transform: uppercase;
+  }
+
+  .voice-sequence {
+    max-width: 800px;
+    margin: 0 auto;
+  }
+
+  .voice-step {
+    margin-bottom: 12px;
+  }
+  .step-label {
+    font-family: var(--mono);
+    font-size: 1.08rem;
+    letter-spacing: .22em;
+    color: var(--text2);
+    margin-bottom: 12px;
+  }
+  .step-text {
+    font-size: clamp(.92rem, 1.6vw, 1.05rem);
+    color: rgba(221,232,255,.6);
+    line-height: 1.55;
+  }
+
+  .voice-arrow {
+    font-family: var(--mono);
+    font-size: .95rem;
+    color: rgba(0,210,255,.35);
+    margin: 3px 0;
+    letter-spacing: .1em;
+  }
+
+  /* Waveform */
+  .waveform {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    margin: 10px auto;
+    height: 30px;
+  }
+  .wave-bar {
+    width: 3px;
+    border-radius: 2px;
+    background: var(--green);
+    opacity: .8;
+  }
+
+  .german-quote-block {
+    margin: 0 auto;
+    max-width: 680px;
+    padding: 16px 28px;
+    background: rgba(0,255,153,.04);
+    border: 1px solid rgba(0,255,153,.15);
+    border-radius: 8px;
+    position: relative;
+  }
+  .german-quote-block::before {
+    content: '"';
+    position: absolute;
+    top: -20px; left: 32px;
+    font-family: var(--serif);
+    font-size: 5rem;
+    line-height: 1;
+    color: rgba(0,255,153,.25);
+  }
+  .german-line {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: clamp(1.4rem, 3vw, 2rem);
+    line-height: 1.6;
+    color: var(--green);
+    text-shadow: 0 0 40px rgba(0,255,153,.3);
+    margin-bottom: 20px;
+  }
+  .german-translation {
+    font-family: var(--mono);
+    font-size: .97rem;
+    letter-spacing: .12em;
+    color: rgba(0,255,153,.55);
+    padding-top: 16px;
+    border-top: 1px solid rgba(0,255,153,.12);
+  }
+  .german-tech {
+    margin-top: 12px;
+    font-family: var(--mono);
+    font-size: 1.08rem;
+    letter-spacing: .1em;
+    color: rgba(107,133,176,.5);
+  }
+
+  .maria-outcome {
+    margin-top: 12px;
+    font-family: var(--display);
+    font-size: clamp(1.4rem, 3.5vw, 2.2rem);
+    font-weight: 700;
+    letter-spacing: .08em;
+    color: #fff;
+    line-height: 1.4;
+  }
+  .maria-outcome span {
+    display: block;
+    color: var(--green);
+  }
+
+  /* ═══════════════════════════════════════════
+     HOW IT WORKS
+  ═══════════════════════════════════════════ */
+  #how-section {
+    padding: 76px 24px 36px;
+    background: var(--bg);
+    justify-content: flex-start;
+  }
+
+  .how-header {
+    text-align: center;
+    margin-bottom: 24px;
+  }
+  .how-header h2 {
+    font-family: var(--display);
+    font-size: clamp(1.6rem, 3.5vw, 2.4rem);
+    font-weight: 700;
+    letter-spacing: .07em;
+    color: #fff;
+    margin: 16px 0 20px;
+  }
+  .how-header p {
+    font-size: 1.05rem;
+    color: var(--text2);
+    max-width: 520px;
+    margin: 0 auto;
+    line-height: 1.7;
+  }
+
+  .arch-flow {
+    display: flex;
+    align-items: stretch;
+    justify-content: center;
+    gap: 0;
+    max-width: 900px;
+    margin: 0 auto 20px;
+  }
+
+  .arch-node {
+    flex: 1;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 22px 18px;
+    text-align: center;
+    position: relative;
+  }
+  .arch-icon {
+    font-size: 1.5rem;
+    margin-bottom: 10px;
+  }
+  .arch-node-label {
+    font-family: var(--display);
+    font-size: .95rem;
+    font-weight: 700;
+    letter-spacing: .2em;
+    margin-bottom: 10px;
+  }
+  .arch-node-label.cyan  { color: var(--cyan); }
+  .arch-node-label.gold  { color: var(--gold); }
+  .arch-node-label.green { color: var(--green); }
+  .arch-node-desc {
+    font-size: 1.05rem;
+    line-height: 1.6;
+    color: var(--text2);
+    margin-bottom: 16px;
+  }
+
+  .arch-arrow {
+    width: 60px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    position: relative;
+    margin-top: -1px;
+  }
+  .arch-arrow::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, var(--cyan), var(--green));
+    opacity: .4;
+    animation: flow 2.5s 1s ease-out both;
+  }
+  .arch-arrow-head {
+    font-size: .9rem;
+    color: var(--cyan);
+    opacity: .5;
+  }
+
+  .tech-tags {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 6px;
+    margin-top: 12px;
+  }
+  .tech-tag {
+    font-family: var(--mono);
+    font-size: 1.05rem;
+    letter-spacing: .1em;
+    padding: 3px 8px;
+    border-radius: 3px;
+    border: 1px solid;
+  }
+  .tech-tag.c { color: var(--cyan); border-color: rgba(0,210,255,.3); background: rgba(0,210,255,.06); }
+  .tech-tag.g { color: var(--green); border-color: rgba(0,255,153,.25); background: rgba(0,255,153,.05); }
+  .tech-tag.d { color: var(--text2); border-color: var(--border); background: transparent; }
+
+  /* stat strip */
+  .stat-strip {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1px;
+    background: var(--border);
+    max-width: 900px;
+    margin: 0 auto;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  .stat-strip-cell {
+    background: var(--panel2);
+    padding: 16px 16px;
+    text-align: center;
+  }
+  .stat-strip-val {
+    font-family: var(--display);
+    font-size: 1.4rem;
+    font-weight: 700;
+    letter-spacing: .04em;
+    color: var(--cyan);
+    margin-bottom: 6px;
+  }
+  .stat-strip-lbl {
+    font-family: var(--mono);
+    font-size: 1.08rem;
+    letter-spacing: .14em;
+    color: var(--text2);
+    text-transform: uppercase;
+  }
+
+  /* ═══════════════════════════════════════════
+     SCALE SECTION
+  ═══════════════════════════════════════════ */
+  #scale-section {
+    padding: 120px 24px;
+    background: var(--panel2);
+    border-top: 1px solid var(--border);
+  }
+
+  .scale-header {
+    text-align: center;
+    margin-bottom: 80px;
+  }
+  .scale-header h2 {
+    font-family: var(--display);
+    font-size: clamp(1.8rem, 4vw, 3rem);
+    font-weight: 700;
+    letter-spacing: .07em;
+    color: #fff;
+    margin: 16px 0 20px;
+    line-height: 1.3;
+  }
+  .scale-header p {
+    font-size: 1.1rem;
+    color: var(--text2);
+    max-width: 560px;
+    margin: 0 auto;
+    line-height: 1.7;
+  }
+  .tsunami-stat {
+    margin-top: 40px;
+    display: inline-block;
+    background: rgba(255,77,77,.05);
+    border: 1px solid rgba(255,77,77,.15);
+    border-radius: 6px;
+    padding: 16px 32px;
+    font-family: var(--mono);
+    font-size: .97rem;
+    letter-spacing: .12em;
+    color: rgba(255,77,77,.7);
+  }
+  .tsunami-stat strong { color: var(--red); font-weight: 500; }
+
+  .scale-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+    max-width: 960px;
+    margin: 0 auto;
+  }
+  .scale-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 40px 32px;
+    transition: border-color .3s, transform .3s;
+  }
+  .scale-card:hover {
+    border-color: rgba(0,210,255,.3);
+    transform: translateY(-4px);
+  }
+  .scale-org {
+    font-family: var(--mono);
+    font-size: .87rem;
+    letter-spacing: .2em;
+    color: var(--cyan);
+    margin-bottom: 16px;
+    text-transform: uppercase;
+  }
+  .scale-card h3 {
+    font-family: var(--display);
+    font-size: 1.05rem;
+    font-weight: 700;
+    letter-spacing: .05em;
+    color: #fff;
+    margin-bottom: 14px;
+    line-height: 1.35;
+  }
+  .scale-card p {
+    font-size: .9rem;
+    line-height: 1.7;
+    color: var(--text2);
+  }
+
+  /* ═══════════════════════════════════════════
+     CLOSING SECTION
+  ═══════════════════════════════════════════ */
+  #close-section {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 80px 24px;
+    position: relative;
+    overflow: hidden;
+    background: var(--bg);
+    border-top: 1px solid var(--border);
+  }
+
+  #close-section::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse 65% 55% at 50% 50%, rgba(0,210,255,.05) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .close-eyebrow {
+    font-family: var(--mono);
+    font-size: .9rem;
+    letter-spacing: .3em;
+    color: var(--text2);
+    margin-bottom: 60px;
+  }
+
+  .close-compare {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 60px;
+    margin-bottom: 72px;
+    flex-wrap: wrap;
+  }
+
+  .compare-block {
+    text-align: center;
+  }
+  .compare-time {
+    font-family: var(--display);
+    font-size: clamp(2.5rem, 7vw, 5rem);
+    font-weight: 900;
+    letter-spacing: .04em;
+    line-height: 1;
+  }
+  .compare-time.before { color: var(--red); }
+  .compare-time.after  {
+    color: var(--cyan);
+    text-shadow: 0 0 60px rgba(0,210,255,.5);
+  }
+  .compare-label {
+    font-family: var(--mono);
+    font-size: .9rem;
+    letter-spacing: .18em;
+    color: var(--text2);
+    margin-top: 10px;
+  }
+
+  .compare-vs {
+    font-family: var(--display);
+    font-size: 1rem;
+    font-weight: 700;
+    letter-spacing: .2em;
+    color: var(--text3);
+  }
+
+  .close-tagline {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: clamp(1.5rem, 3.5vw, 2.4rem);
+    color: rgba(221,232,255,.65);
+    max-width: 640px;
+    line-height: 1.5;
+    margin-bottom: 56px;
+  }
+  .close-tagline em {
+    color: #fff;
+    font-style: normal;
+  }
+
+  .aegis-word {
+    font-family: var(--display);
+    font-size: clamp(3rem, 9vw, 7rem);
+    font-weight: 900;
+    letter-spacing: .15em;
+    color: var(--cyan);
+    text-shadow: 0 0 100px rgba(0,210,255,.5);
+    margin-bottom: 40px;
+  }
+
+  .cta-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 14px;
+    background: transparent;
+    border: 1px solid var(--cyan);
+    border-radius: 4px;
+    padding: 18px 48px;
+    font-family: var(--display);
+    font-size: 1.02rem;
+    font-weight: 700;
+    letter-spacing: .2em;
+    color: var(--cyan);
+    text-decoration: none;
+    text-transform: uppercase;
+    transition: background .3s, box-shadow .3s, transform .2s;
+    cursor: pointer;
+  }
+  .cta-btn:hover {
+    background: rgba(0,210,255,.08);
+    box-shadow: 0 0 40px rgba(0,210,255,.25);
+    transform: translateY(-2px);
+  }
+  .cta-btn svg { width: 14px; height: 14px; }
+
+  .cta-sub {
+    margin-top: 16px;
+    font-family: var(--mono);
+    font-size: .87rem;
+    letter-spacing: .16em;
+    color: var(--text2);
+  }
+
+  /* Footer */
+  footer {
+    padding: 32px 48px;
+    background: var(--panel2);
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .footer-logo {
+    font-family: var(--display);
+    font-size: .95rem;
+    font-weight: 700;
+    letter-spacing: .25em;
+    color: rgba(0,210,255,.4);
+  }
+  .footer-meta {
+    font-family: var(--mono);
+    font-size: 1.05rem;
+    letter-spacing: .14em;
+    color: var(--text3);
+  }
+
+  /* ═══════════════════════════════════════════
+     RESPONSIVE
+  ═══════════════════════════════════════════ */
+  @media (max-width: 860px) {
+    nav { padding: 14px 20px; }
+    .maria-layout { grid-template-columns: 1fr; gap: 48px; }
+    .phone-wrap { order: -1; }
+    .cap-grid { grid-template-columns: 1fr; }
+    .arch-flow { flex-direction: column; align-items: stretch; max-width: 400px; }
+    .arch-arrow { width: auto; height: 40px; }
+    .arch-arrow::before { top: 0; bottom: 0; left: 50%; right: auto; width: 1px; height: 100%; background: linear-gradient(to bottom, var(--cyan), var(--green)); }
+    .scale-grid { grid-template-columns: 1fr; max-width: 400px; }
+    .stat-strip { grid-template-columns: repeat(2, 1fr); }
+    .dash-inner { grid-template-columns: 1fr; }
+    .dash-sidebar { display: none; }
+    .dash-stats-row { grid-template-columns: repeat(2, 1fr); }
+    .close-compare { gap: 32px; }
+    footer { flex-direction: column; gap: 12px; text-align: center; }
+  }
+</style>
+</head>
+<body>
+
+<!-- NAV ──────────────────────────────────── -->
+<nav>
+  <div class="nav-logo">AEGIS</div>
+  <div class="nav-badge">MISTRAL AI HACKATHON 2026</div>
+</nav>
+<div class="dot-nav" id="dot-nav">
+  <div class="dot-nav-item active" data-target="hero">
+    <div class="dot"></div><span class="dot-label">AEGIS</span>
+  </div>
+  <div class="dot-nav-item" data-target="gap-section">
+    <div class="dot"></div><span class="dot-label">The Gap</span>
+  </div>
+  <div class="dot-nav-item" data-target="maria-section">
+    <div class="dot"></div><span class="dot-label">Maria</span>
+  </div>
+  <div class="dot-nav-item" data-target="product-section">
+    <div class="dot"></div><span class="dot-label">Platform</span>
+  </div>
+  <div class="dot-nav-item" data-target="dashboard-preview">
+    <div class="dot"></div><span class="dot-label">Dashboard</span>
+  </div>
+  <div class="dot-nav-item" data-target="voice-section">
+    <div class="dot"></div><span class="dot-label">Response</span>
+  </div>
+  <div class="dot-nav-item" data-target="how-section">
+    <div class="dot"></div><span class="dot-label">How It Works</span>
+  </div>
+  <div class="dot-nav-item" data-target="scale-section">
+    <div class="dot"></div><span class="dot-label">Scale</span>
+  </div>
+  <div class="dot-nav-item" data-target="close-section">
+    <div class="dot"></div><span class="dot-label">Mission</span>
+  </div>
+</div>
+
+<div id="snap-wrapper">
+<!-- ═══════════════════════════════════════════
+     HERO
+═══════════════════════════════════════════ -->
+<section id="hero">
+  <div class="hero-eyebrow">AI Emergency Guidance &amp; Intelligence System</div>
+
+  <div class="hero-death-count">224</div>
+  <div class="hero-sub">lives lost &nbsp;·&nbsp; Valencia, Spain &nbsp;·&nbsp; October 29, 2024</div>
+
+  <div class="hero-divider"></div>
+
+  <p class="hero-statement">
+    The warning existed.<br>
+    <strong>The gap didn't have to.</strong>
+  </p>
+
+  <div class="scroll-hint">
+    <span>scroll</span>
+    <div class="scroll-arrow"></div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════
+     THE GAP
+═══════════════════════════════════════════ -->
+<section id="gap-section">
+  <div class="container">
+
+    <div class="gap-header reveal">
+      <div class="label">The Problem</div>
+      <h2>Twelve and a half hours of silence.</h2>
+    </div>
+
+    <div class="timeline-visual reveal">
+      <div class="time-node">
+        <div class="time-value am">7:31 AM</div>
+        <div class="time-label">AEMET RED ALERT ISSUED</div>
+      </div>
+      <div class="gap-bar">
+        <div class="gap-bar-track"></div>
+        <div class="gap-center-label">12.5h</div>
+        <div class="gap-center-sub">BETWEEN WARNING AND REACH</div>
+      </div>
+      <div class="time-node">
+        <div class="time-value pm">8:00 PM</div>
+        <div class="time-label">FIRST SMS TO CITIZENS</div>
+      </div>
+    </div>
+
+    <div class="gap-body reveal">
+      <p>
+        Spain's meteorological agency sounded the alarm at dawn — maximum red alert, extreme danger. For twelve and a half hours, that warning moved through institutional channels while floodwater rose through Valencia's streets.
+      </p>
+      <p>
+        The gap wasn't an accident. It was a system failure — three failures, stacked on top of each other.
+      </p>
+    </div>
+
+    <div class="three-problems reveal">
+      <div class="problem-item">
+        <div class="problem-num">01</div>
+        <div class="problem-body">
+          <div class="problem-title">The Communication Gap.</div>
+          <div class="problem-desc">Agencies alert. Governments deliberate. Citizens wait. The chain between a warning and the person who needs it is broken by design.</div>
+        </div>
+      </div>
+      <div class="problem-item">
+        <div class="problem-num">02</div>
+        <div class="problem-body">
+          <div class="problem-title">Language.</div>
+          <div class="problem-desc">When the person who needs help doesn't speak the language of the person who can give it — the gap becomes a wall. Every warning. Every time.</div>
+        </div>
+      </div>
+      <div class="problem-item">
+        <div class="problem-num">03</div>
+        <div class="problem-body">
+          <div class="problem-title">No Single Picture.</div>
+          <div class="problem-desc">Responders can't see individual cries for help and the full crisis at once. One person or the crowd — never both. Triage becomes guesswork.</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════
+     MEET MARIA
+═══════════════════════════════════════════ -->
+<section id="maria-section">
+  <div class="container">
+    <div class="maria-layout">
+
+      <div class="maria-copy">
+        <div class="label reveal-fast">One Person. One Message.</div>
+        <h2 class="reveal">Her name is Maria.</h2>
+        <p class="reveal">
+          German tourist. Standing in floodwater in a city where nobody speaks her language. The warning agency already knows her grid is flooding — but that alert is still moving through committees. She calls the emergency line. The operator doesn't understand her.
+        </p>
+        <p class="reveal">
+          Problem one: the warning never reached her.<br>
+          Problem two: even if it had, she couldn't understand it.
+        </p>
+        <p class="reveal">
+          <strong>She has Telegram.</strong><br>
+          And now she has AEGIS.
+        </p>
+        <div class="telegram-tag reveal-fast">
+          <div class="telegram-dot"></div>
+          AEGIS BOT — ONLINE
+        </div>
+      </div>
+
+      <div class="phone-wrap reveal">
+        <div class="phone">
+          <div class="phone-header">
+            <div class="phone-avatar">A</div>
+            <div>
+              <div class="phone-name">AEGIS Emergency</div>
+              <div class="phone-status">online</div>
+            </div>
+          </div>
+          <div class="phone-body">
+
+            <div class="msg-bubble out">
+              <div class="msg-text">
+                <div class="de">Hilfe. Das Wasser steigt.</div>
+                <div class="en">Help. The water is rising.</div>
+              </div>
+              <div class="msg-meta">20:03 ✓✓</div>
+            </div>
+
+            <div style="display:flex;align-items:center;gap:6px;margin:4px 0;">
+              <div class="location-pin">
+                <span>📍</span>
+                <span>GPS · Valencia N 39.4699° W 0.3763°</span>
+              </div>
+            </div>
+
+            <div style="font-family:var(--mono);font-size:1.08rem;color:var(--text2);padding:4px 0;text-align:center;letter-spacing:.1em;">
+              — Processing —
+            </div>
+
+            <div class="msg-bubble aegis in">
+              <div class="aegis-label">AEGIS · VERIFIED ✓</div>
+              <div class="msg-text">
+                <div class="de" style="color:var(--green);font-size:1.08rem;">Sofort evakuieren. Gehen Sie auf höheres Gelände.</div>
+                <div class="en" style="margin-top:6px;">Evacuate immediately. Move to higher ground.</div>
+              </div>
+              <div class="msg-meta" style="color:rgba(0,255,153,.4);">20:03 · Voice sent 🔊</div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════
+     PRODUCT REVEAL
+═══════════════════════════════════════════ -->
+<section id="product-section">
+  <div class="container">
+
+    <div class="product-header reveal">
+      <div class="label">Introducing</div>
+      <div class="product-name">AEGIS</div>
+      <div class="product-full-name">AI EMERGENCY GUIDANCE &amp; INTELLIGENCE SYSTEM</div>
+      <div class="product-tagline">
+        Built in 48 hours. Running right now.<br>
+        Every report. Every language. Zero barriers.
+      </div>
+    </div>
+
+    <div class="cap-grid">
+      <div class="cap-card cyan reveal" style="transition-delay:.05s">
+        <div class="cap-num cyan">01 / EXTRACT</div>
+        <div class="cap-title">Instant Intelligence</div>
+        <div class="cap-desc">
+          Every message — voice, text, any language — becomes structured incident data in milliseconds. Type, severity, location, need. The individual cry for help, decoded and actionable. Zero ambiguity. Zero delay.
+        </div>
+        <div class="cap-tech">Mistral Large · JSON Mode · Solves Problem 01</div>
+      </div>
+
+      <div class="cap-card green reveal" style="transition-delay:.15s">
+        <div class="cap-num green">02 / VERIFY</div>
+        <div class="cap-title">Trust Before Action</div>
+        <div class="cap-desc">
+          Before any responder acts, a live agent searches real-world sources to confirm the incident. Verified reports reach responders directly — no committees, no delay. The gap between alert and action, collapsed.
+        </div>
+        <div class="cap-tech">Mistral Agents API · Live Web Search · Solves Problem 01</div>
+      </div>
+
+      <div class="cap-card gold reveal" style="transition-delay:.25s">
+        <div class="cap-num gold">03 / RESPOND</div>
+        <div class="cap-title">Voice in Their Language</div>
+        <div class="cap-desc">
+          Responders type once in English. AEGIS translates and delivers a synthesized voice message in the victim's native language — directly to their phone. The language wall, gone.
+        </div>
+        <div class="cap-tech">Voxtral STT · Multilingual Synthesis · Solves Problem 02</div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════
+     DASHBOARD PREVIEW
+═══════════════════════════════════════════ -->
+<section id="dashboard-preview">
+  <div class="dash-intro reveal">
+    <div class="label">Solving Problem 03</div>
+    <h2>Every person. The full picture.<br>One screen.</h2>
+    <p>
+      Respond to Maria individually. See the entire flood zone collectively. AEGIS gives responders both — every verified incident ranked by criticality, every individual in need located and triaged, all on one live dashboard. No more choosing between the one and the many.
+    </p>
+  </div>
+
+  <div class="dash-frame reveal">
+    <div class="dash-topbar">
+      <div class="dash-dots">
+        <span class="d1"></span><span class="d2"></span><span class="d3"></span>
+      </div>
+      <div class="dash-url">aegis.intelligence · Emergency Operations Dashboard</div>
+    </div>
+
+    <div class="dash-inner">
+      <div class="dash-sidebar">
+        <div class="sidebar-head">
+          <h4>AEGIS · LIVE FEED</h4>
+          <p>12 active · 3 critical</p>
+        </div>
+
+        <div class="alert-card active">
+          <div class="alert-card-top">
+            <span class="alert-type">FLOOD · CRITICAL</span>
+            <span class="severity-badge">SEV 5</span>
+          </div>
+          <div class="alert-msg">Hilfe. Das Wasser steigt.</div>
+          <div class="alert-meta">
+            <span>🇩🇪 DE→EN</span>
+            <span>Valencia Grid 7</span>
+          </div>
+          <div class="verify-badge">✓ VERIFIED</div>
+        </div>
+
+        <div class="alert-card verified" style="opacity:.8">
+          <div class="alert-card-top">
+            <span class="alert-type verified">EVACUATION</span>
+            <span class="severity-badge v">SEV 3</span>
+          </div>
+          <div class="alert-msg">Necesito ayuda, no puedo salir</div>
+          <div class="alert-meta">
+            <span>🇪🇸 ES→EN</span>
+            <span>Grid 4B</span>
+          </div>
+          <div class="verify-badge">✓ VERIFIED</div>
+        </div>
+
+        <div class="alert-card" style="opacity:.6">
+          <div class="alert-card-top">
+            <span class="alert-type">MEDICAL</span>
+            <span class="severity-badge">SEV 4</span>
+          </div>
+          <div class="alert-msg">Aidez-moi, blessé</div>
+          <div class="alert-meta">
+            <span>🇫🇷 FR→EN</span>
+            <span>Grid 2A</span>
+          </div>
+        </div>
+
+        <div class="alert-card" style="opacity:.4;margin-top:4px">
+          <div class="alert-card-top">
+            <span class="alert-type">TRAPPED</span>
+            <span class="severity-badge">SEV 4</span>
+          </div>
+          <div class="alert-msg">مساعدة، محاصر في البناء</div>
+          <div class="alert-meta">
+            <span>🇸🇦 AR→EN</span>
+            <span>Grid 9C</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="dash-main">
+        <div class="map-area">
+          <!-- Map pins positioned as % of container -->
+          <div class="map-pin red" style="left:48%;top:44%;"></div>
+          <div class="map-pin amber" style="left:32%;top:58%;"></div>
+          <div class="map-pin cyan" style="left:62%;top:36%;"></div>
+          <div class="map-pin red" style="left:55%;top:62%;"></div>
+          <div class="map-pin amber" style="left:41%;top:28%;"></div>
+
+          <div class="map-label" style="left:50%;top:47%;font-size:1.02rem;">Maria · Critical</div>
+          <div class="map-label" style="left:34%;top:61%;font-size:1.02rem;opacity:.6;">Grid 4B</div>
+          <div class="map-label" style="left:64%;top:39%;font-size:1.02rem;opacity:.6;">Grid 2A</div>
+
+          <!-- Responder info overlay -->
+          <div style="position:absolute;bottom:16px;right:16px;background:rgba(5,14,29,.85);border:1px solid rgba(0,210,255,.2);border-radius:6px;padding:12px 16px;backdrop-filter:blur(12px);">
+            <div style="font-family:var(--mono);font-size:1.08rem;letter-spacing:.15em;color:var(--cyan);margin-bottom:8px;">SELECTED · MARIA</div>
+            <div style="font-size:1rem;color:var(--text);margin-bottom:4px;">Flood · SEV 5 · Verified</div>
+            <div style="font-family:var(--mono);font-size:1.08rem;color:var(--text2);margin-bottom:8px;">N 39.4699° · W 0.3763°</div>
+            <div style="display:flex;gap:6px;">
+              <div style="font-family:var(--mono);font-size:1.05rem;background:rgba(0,255,153,.12);color:var(--green);border:1px solid rgba(0,255,153,.25);border-radius:3px;padding:3px 8px;">✓ VERIFIED</div>
+              <div style="font-family:var(--mono);font-size:1.05rem;background:rgba(0,210,255,.08);color:var(--cyan);border:1px solid rgba(0,210,255,.2);border-radius:3px;padding:3px 8px;">🔊 SENT DE</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="dash-stats-row">
+          <div class="dash-stat">
+            <div class="dash-stat-val red">12</div>
+            <div class="dash-stat-lbl">Active</div>
+          </div>
+          <div class="dash-stat">
+            <div class="dash-stat-val green">9</div>
+            <div class="dash-stat-lbl">Verified</div>
+          </div>
+          <div class="dash-stat">
+            <div class="dash-stat-val cyan">8</div>
+            <div class="dash-stat-lbl">Languages</div>
+          </div>
+          <div class="dash-stat">
+            <div class="dash-stat-val gold">&lt;2s</div>
+            <div class="dash-stat-lbl">Response Time</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════
+     THE VOICE
+═══════════════════════════════════════════ -->
+<section id="voice-section">
+  <div class="voice-sequence">
+
+    <div class="voice-setup reveal">THREE PROBLEMS. ONE RESPONSE.</div>
+
+    <div class="voice-step reveal">
+      <div class="step-label">PROBLEM 01 — CLOSED</div>
+      <div class="step-text">
+        Maria's message doesn't sit in a queue or wait for a committee. The moment she sends it, Mistral parses it — language, location, severity, need — structured in milliseconds and placed directly in front of a responder.
+      </div>
+    </div>
+
+    <div class="voice-arrow reveal">↓</div>
+
+    <div class="voice-step reveal">
+      <div class="step-label">PROBLEM 03 — CLOSED</div>
+      <div class="step-text">
+        Her individual case is verified and ranked against every other active incident on the map. The responder sees Maria — and sees the full flood zone. Individual triage. Collective command. At once.
+      </div>
+    </div>
+
+    <div class="voice-arrow reveal">↓</div>
+
+    <div class="voice-step reveal">
+      <div class="step-label">PROBLEM 02 — CLOSED</div>
+      <div class="step-text">
+        The responder types once in English. AEGIS translates it. Voxtral synthesizes a voice — in German. Sent directly to Maria's phone. The language wall, gone. In under two seconds.
+      </div>
+    </div>
+
+    <div class="voice-arrow reveal">↓</div>
+
+    <!-- Waveform -->
+    <div class="waveform reveal" id="waveform-anim">
+      <!-- bars generated by JS -->
+    </div>
+
+    <div class="german-quote-block reveal">
+      <div class="german-line">
+        Sofort evakuieren.<br>
+        Gehen Sie auf höheres Gelände.<br>
+        Rettungsdienste sind unterwegs.
+      </div>
+      <div class="german-translation">
+        Evacuate immediately. &nbsp;·&nbsp; Move to higher ground. &nbsp;·&nbsp; Emergency services are on their way.
+      </div>
+      <div class="german-tech">
+        Synthesized by Voxtral · Delivered via Telegram · 1.8s end-to-end
+      </div>
+    </div>
+
+    <div class="maria-outcome reveal">
+      Maria understands.
+      <span>Maria moves.</span>
+    </div>
+
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════
+     HOW IT WORKS
+═══════════════════════════════════════════ -->
+<section id="how-section">
+  <div class="container">
+
+    <div class="how-header reveal">
+      <div class="label">Architecture</div>
+      <h2>Three layers. One mission.</h2>
+      <p>
+        No app to download. No account to create. Works on a 2G connection. Deployable with a single command.
+      </p>
+    </div>
+
+    <div class="arch-flow reveal">
+
+      <div class="arch-node">
+        <div class="arch-icon">📱</div>
+        <div class="arch-node-label cyan">CITIZEN</div>
+        <div class="arch-node-desc">
+          Any person. Any language. Any device. Reaches AEGIS through Telegram — already installed on 900M+ phones worldwide.
+        </div>
+        <div class="tech-tags">
+          <span class="tech-tag c">Telegram Bot</span>
+          <span class="tech-tag d">Voice + Text</span>
+          <span class="tech-tag d">GPS</span>
+        </div>
+      </div>
+
+      <div class="arch-arrow">
+        <div class="arch-arrow-head">›</div>
+      </div>
+
+      <div class="arch-node" style="border-color:rgba(0,210,255,.3);background:rgba(0,210,255,.04);">
+        <div class="arch-icon">🧠</div>
+        <div class="arch-node-label cyan">AEGIS INTELLIGENCE</div>
+        <div class="arch-node-desc">
+          Mistral AI at the core. JSON-mode extraction, live verification via Agents API, multilingual voice synthesis. Structured truth from chaos — in under two seconds.
+        </div>
+        <div class="tech-tags">
+          <span class="tech-tag c">Mistral Large</span>
+          <span class="tech-tag c">Agents API</span>
+          <span class="tech-tag c">Voxtral</span>
+          <span class="tech-tag d">SQLite WAL</span>
+        </div>
+      </div>
+
+      <div class="arch-arrow">
+        <div class="arch-arrow-head">›</div>
+      </div>
+
+      <div class="arch-node">
+        <div class="arch-icon">🎯</div>
+        <div class="arch-node-label green">RESPONDER</div>
+        <div class="arch-node-desc">
+          The coordinator sees everything: translated report, exact coordinates, verification status, severity. Types once in English. AEGIS handles the rest.
+        </div>
+        <div class="tech-tags">
+          <span class="tech-tag g">Live Dashboard</span>
+          <span class="tech-tag g">Voice Broadcast</span>
+          <span class="tech-tag d">12 Languages</span>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="stat-strip reveal" style="margin-top:36px;">
+      <div class="stat-strip-cell">
+        <div class="stat-strip-val">&lt;2s</div>
+        <div class="stat-strip-lbl">End-to-End</div>
+      </div>
+      <div class="stat-strip-cell">
+        <div class="stat-strip-val">12+</div>
+        <div class="stat-strip-lbl">Languages</div>
+      </div>
+      <div class="stat-strip-cell">
+        <div class="stat-strip-val">0</div>
+        <div class="stat-strip-lbl">Apps to Install</div>
+      </div>
+      <div class="stat-strip-cell">
+        <div class="stat-strip-val">48h</div>
+        <div class="stat-strip-lbl">Built In</div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════
+     SCALE
+═══════════════════════════════════════════ -->
+<section id="scale-section">
+  <div class="container">
+
+    <div class="scale-header reveal">
+      <div class="label">The Vision</div>
+      <h2>One platform.<br>Every disaster zone on Earth.</h2>
+      <p>
+        228,000 people died in the 2004 Indian Ocean Tsunami. We built early warning systems after. We didn't wait this time.
+      </p>
+      <div class="tsunami-stat reveal-fast">
+        <strong>228,000</strong> tsunami deaths in 2004 &nbsp;·&nbsp; Warning infrastructure built after &nbsp;·&nbsp; <strong>AEGIS</strong> built before the next one.
+      </div>
+    </div>
+
+    <div class="scale-grid">
+
+      <div class="scale-card reveal" style="transition-delay:.05s">
+        <div class="scale-org">Deployment Target</div>
+        <h3>Red Cross Field Operations</h3>
+        <p>
+          Every field coordinator speaks to every affected citizen — regardless of language — through a single unified interface. No translators. No delays.
+        </p>
+      </div>
+
+      <div class="scale-card reveal" style="transition-delay:.15s">
+        <div class="scale-org">Deployment Target</div>
+        <h3>UN Disaster Response Zones</h3>
+        <p>
+          Multi-agency coordination across language barriers. Verified incident data flowing to the right teams in real time. Chaos structured. Action enabled.
+        </p>
+      </div>
+
+      <div class="scale-card reveal" style="transition-delay:.25s">
+        <div class="scale-org">Deployment Target</div>
+        <h3>Every Multilingual City</h3>
+        <p>
+          From Valencia to Tokyo, Lagos to London — any city where the person who needs help and the person who can give it don't share a single word in common.
+        </p>
+      </div>
+
+    </div>
+
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════
+     CLOSE
+═══════════════════════════════════════════ -->
+<section id="close-section">
+
+  <div class="close-eyebrow reveal-fast">Three Problems. One System. Every Life.</div>
+
+  <div class="close-compare reveal">
+    <div class="compare-block">
+      <div class="compare-time before">12.5h</div>
+      <div class="compare-label">VALENCIA'S GAP</div>
+    </div>
+    <div class="compare-vs">→</div>
+    <div class="compare-block">
+      <div class="compare-time after">&lt;2s</div>
+      <div class="compare-label">AEGIS RESPONSE</div>
+    </div>
+  </div>
+
+  <div class="close-three reveal" style="display:flex;gap:32px;justify-content:center;flex-wrap:wrap;margin-bottom:56px;max-width:760px;">
+    <div style="text-align:center;flex:1;min-width:180px;">
+      <div style="font-family:var(--display);font-size:.8rem;font-weight:700;letter-spacing:.18em;color:var(--red);opacity:.5;margin-bottom:10px;">01</div>
+      <div style="font-family:var(--display);font-size:.85rem;font-weight:600;letter-spacing:.06em;color:#fff;margin-bottom:8px;">Communication Gap</div>
+      <div style="font-family:var(--mono);font-size:.82rem;color:var(--green);letter-spacing:.1em;">CLOSED</div>
+    </div>
+    <div style="width:1px;background:var(--border);flex-shrink:0;"></div>
+    <div style="text-align:center;flex:1;min-width:180px;">
+      <div style="font-family:var(--display);font-size:.8rem;font-weight:700;letter-spacing:.18em;color:var(--red);opacity:.5;margin-bottom:10px;">02</div>
+      <div style="font-family:var(--display);font-size:.85rem;font-weight:600;letter-spacing:.06em;color:#fff;margin-bottom:8px;">Language Barrier</div>
+      <div style="font-family:var(--mono);font-size:.82rem;color:var(--green);letter-spacing:.1em;">CLOSED</div>
+    </div>
+    <div style="width:1px;background:var(--border);flex-shrink:0;"></div>
+    <div style="text-align:center;flex:1;min-width:180px;">
+      <div style="font-family:var(--display);font-size:.8rem;font-weight:700;letter-spacing:.18em;color:var(--red);opacity:.5;margin-bottom:10px;">03</div>
+      <div style="font-family:var(--display);font-size:.85rem;font-weight:600;letter-spacing:.06em;color:#fff;margin-bottom:8px;">No Single Picture</div>
+      <div style="font-family:var(--mono);font-size:.82rem;color:var(--green);letter-spacing:.1em;">CLOSED</div>
+    </div>
+  </div>
+
+  <p class="close-tagline reveal">
+    <em>Every voice, heard.</em><br>
+    Every second, counts.
+  </p>
+
+  <div class="aegis-word reveal">AEGIS</div>
+
+  <a href="./frontend/index-integrated.html" class="cta-btn reveal">
+    Enter the Dashboard
+    <svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5">
+      <path d="M2 7h10M7 2l5 5-5 5"/>
+    </svg>
+  </a>
+
+  <div class="cta-sub reveal-fast">
+    Live intelligence platform &nbsp;·&nbsp; Powered by Mistral AI
+  </div>
+
+</section>
+
+<!-- FOOTER ──────────────────────────────── -->
+<footer>
+  <div class="footer-logo">AEGIS</div>
+  <div class="footer-meta">Mistral AI Worldwide Hackathon 2026 &nbsp;·&nbsp; AI Emergency Guidance &amp; Intelligence System</div>
+</footer>
+
+  <style>footer { display: none; }</style>
+</div><!-- /#snap-wrapper -->
+
+<!-- ═══════════════════════════════════════════
+     JAVASCRIPT
+═══════════════════════════════════════════ -->
+<script>
+  /* ── Waveform generation ─────────────────── */
+  const wf = document.getElementById('waveform-anim');
+  if (wf) {
+    const profile = [.15,.2,.35,.6,.9,.7,.5,.4,.65,.85,.95,.75,.5,.4,.3,.55,.8,.95,.85,.65,.45,.3,.5,.7,.9,.75,.6,.45,.35,.5,.7,.85,.95,.8,.65,.5,.4,.3,.45,.6,.8,.9,.7,.55,.4,.3,.25,.2,.15,.12,.1,.08];
+    profile.forEach((h, i) => {
+      const bar = document.createElement('div');
+      bar.className = 'wave-bar';
+      const ht = Math.round(h * 34) + 3;
+      bar.style.cssText = `height:${ht}px;animation:waveform ${(.8+Math.random()*.7).toFixed(2)}s ${(i*.04).toFixed(2)}s ease-in-out infinite;`;
+      wf.appendChild(bar);
+    });
+  }
+
+  /* ── Fullpage snap — section tracking ──────── */
+  const snapWrapper  = document.getElementById('snap-wrapper');
+  const sections     = Array.from(document.querySelectorAll('#snap-wrapper section'));
+  const dotItems     = Array.from(document.querySelectorAll('.dot-nav-item'));
+  const revealed     = new Set();
+
+  function revealSection(section) {
+    section.querySelectorAll('.reveal, .reveal-fast').forEach((el, i) => {
+      setTimeout(() => el.classList.add('visible'), i * 60);
+    });
+  }
+
+  function getActiveSectionIndex() {
+    const scrollTop = snapWrapper.scrollTop;
+    const vh = snapWrapper.clientHeight;
+    // Find section whose top is closest to scrollTop
+    let best = 0, bestDist = Infinity;
+    sections.forEach((sec, i) => {
+      const dist = Math.abs(sec.offsetTop - scrollTop);
+      if (dist < bestDist) { bestDist = dist; best = i; }
+    });
+    return best;
+  }
+
+  function onSnapScroll() {
+    const idx = getActiveSectionIndex();
+    // Update dots
+    dotItems.forEach((d, i) => d.classList.toggle('active', i === idx));
+    // Reveal current + adjacent sections
+    [idx - 1, idx, idx + 1].forEach(i => {
+      if (i >= 0 && i < sections.length && !revealed.has(i)) {
+        revealSection(sections[i]);
+        revealed.add(i);
+      }
+    });
+  }
+
+  // Dot clicks → scroll to section
+  dotItems.forEach(item => {
+    item.addEventListener('click', () => {
+      const target = document.getElementById(item.dataset.target);
+      if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  });
+
+  // Throttled scroll listener on snap wrapper
+  let scrollTimer;
+  snapWrapper.addEventListener('scroll', () => {
+    clearTimeout(scrollTimer);
+    scrollTimer = setTimeout(onSnapScroll, 80);
+  }, { passive: true });
+
+  // Initial reveal for first section
+  revealSection(sections[0]);
+  revealed.add(0);
+</script>
+
+</body>
+</html>
+>>>>>>> c4ef01c1ec4da5a7c616f876609699fb87c77d14
