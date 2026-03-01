@@ -1,0 +1,1558 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AEGIS — Crisis Triage Dashboard</title>
+    <meta name="description"
+        content="AEGIS AI Emergency Guidance & Intelligence System — Real-time crisis triage dashboard for emergency responders.">
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
+
+    <style>
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --bg-primary: #0a0e17;
+            --bg-secondary: #111827;
+            --bg-panel: #1a1f2e;
+            --bg-card: #1e2538;
+            --bg-hover: #252d42;
+            --border: #2a3350;
+            --border-glow: #3b82f6;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --accent-blue: #3b82f6;
+            --accent-cyan: #06b6d4;
+            --accent-purple: #8b5cf6;
+            --accent-green: #22c55e;
+            --accent-orange: #f97316;
+            --severity-critical: #ef4444;
+            --severity-high: #f97316;
+            --severity-moderate: #eab308;
+            --severity-low: #22c55e;
+            --severity-info: #3b82f6;
+            --verified: #22c55e;
+            --unverified: #eab308;
+            --pending: #94a3b8;
+            --font-main: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+            --radius: 12px;
+            --radius-sm: 8px;
+            --shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+            --shadow-glow: 0 0 30px rgba(59, 130, 246, 0.15);
+            --sidebar-width: 440px;
+            --header-height: 64px;
+        }
+
+        body {
+            font-family: var(--font-main);
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* ── Header ──────────────────────────────────────────────────────── */
+        #header {
+            height: var(--header-height);
+            background: linear-gradient(135deg, var(--bg-secondary) 0%, var(--bg-panel) 100%);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 24px;
+            position: relative;
+            z-index: 1000;
+            box-shadow: var(--shadow);
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .logo-icon {
+            width: 36px;
+            height: 36px;
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan));
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.3);
+        }
+
+        .logo-text {
+            font-size: 20px;
+            font-weight: 800;
+            letter-spacing: 2px;
+            background: linear-gradient(135deg, var(--text-primary), var(--accent-cyan));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .header-subtitle {
+            font-size: 11px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            font-weight: 500;
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .live-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--severity-critical);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .live-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--severity-critical);
+            border-radius: 50%;
+            animation: pulse-live 1.5s ease-in-out infinite;
+            box-shadow: 0 0 12px var(--severity-critical);
+        }
+
+        @keyframes pulse-live {
+
+            0%,
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+
+            50% {
+                opacity: 0.4;
+                transform: scale(0.8);
+            }
+        }
+
+        .stat-badge {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 6px 14px;
+            font-size: 12px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .stat-badge .count {
+            font-family: var(--font-mono);
+            color: var(--accent-cyan);
+            font-size: 15px;
+        }
+
+        /* ── Layout ──────────────────────────────────────────────────────── */
+        #main-container {
+            display: flex;
+            height: calc(100vh - var(--header-height));
+        }
+
+        #map {
+            flex: 1;
+            z-index: 1;
+        }
+
+        .leaflet-tile-pane {
+            filter: saturate(0.3) brightness(0.65) contrast(1.1);
+        }
+
+        /* ── Sidebar ─────────────────────────────────────────────────────── */
+        #sidebar {
+            width: var(--sidebar-width);
+            background: var(--bg-secondary);
+            border-left: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            z-index: 500;
+        }
+
+        .sidebar-tabs {
+            display: flex;
+            border-bottom: 1px solid var(--border);
+            background: var(--bg-panel);
+        }
+
+        .sidebar-tab {
+            flex: 1;
+            padding: 14px 10px;
+            text-align: center;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.25s;
+        }
+
+        .sidebar-tab:hover {
+            color: var(--text-secondary);
+            background: var(--bg-hover);
+        }
+
+        .sidebar-tab.active {
+            color: var(--accent-cyan);
+            border-bottom-color: var(--accent-cyan);
+            background: rgba(6, 182, 212, 0.05);
+        }
+
+        .tab-content {
+            display: none;
+            flex-direction: column;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .tab-content.active {
+            display: flex;
+        }
+
+        /* ── Alert Cards ─────────────────────────────────────────────────── */
+        .alert-list {
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .alert-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 16px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+            overflow: hidden;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        .alert-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+        }
+
+        .alert-card.severity-5::before {
+            background: var(--severity-critical);
+        }
+
+        .alert-card.severity-4::before {
+            background: var(--severity-high);
+        }
+
+        .alert-card.severity-3::before {
+            background: var(--severity-moderate);
+        }
+
+        .alert-card.severity-2::before {
+            background: var(--severity-low);
+        }
+
+        .alert-card.severity-1::before {
+            background: var(--severity-info);
+        }
+
+        .alert-card:hover {
+            border-color: var(--border-glow);
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-glow);
+        }
+
+        .alert-card.resolved {
+            opacity: 0.5;
+        }
+
+        .alert-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 8px;
+        }
+
+        .alert-type {
+            font-size: 13px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .severity-badge {
+            font-size: 10px;
+            font-weight: 700;
+            padding: 3px 10px;
+            border-radius: 20px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .sev-critical {
+            background: rgba(239, 68, 68, 0.15);
+            color: var(--severity-critical);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        .sev-high {
+            background: rgba(249, 115, 22, 0.15);
+            color: var(--severity-high);
+            border: 1px solid rgba(249, 115, 22, 0.3);
+        }
+
+        .sev-moderate {
+            background: rgba(234, 179, 8, 0.15);
+            color: var(--severity-moderate);
+            border: 1px solid rgba(234, 179, 8, 0.3);
+        }
+
+        .sev-low {
+            background: rgba(34, 197, 94, 0.15);
+            color: var(--severity-low);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+        }
+
+        .sev-info {
+            background: rgba(59, 130, 246, 0.15);
+            color: var(--severity-info);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+        }
+
+        .alert-summary {
+            font-size: 13px;
+            color: var(--text-secondary);
+            line-height: 1.5;
+            margin-bottom: 6px;
+        }
+
+        .alert-raw {
+            font-size: 11px;
+            color: var(--text-muted);
+            font-style: italic;
+            margin-bottom: 8px;
+            line-height: 1.4;
+        }
+
+        .alert-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .alert-meta-left {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .status-flag {
+            font-size: 9px;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .s-active {
+            background: rgba(59, 130, 246, 0.12);
+            color: var(--accent-blue);
+        }
+
+        .s-escalated {
+            background: rgba(249, 115, 22, 0.15);
+            color: var(--accent-orange);
+        }
+
+        .s-resolved {
+            background: rgba(34, 197, 94, 0.12);
+            color: var(--accent-green);
+        }
+
+        .verification-flag {
+            font-size: 10px;
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .v-verified {
+            background: rgba(34, 197, 94, 0.15);
+            color: var(--verified);
+        }
+
+        .v-partially_verified {
+            background: rgba(234, 179, 8, 0.12);
+            color: var(--unverified);
+        }
+
+        .v-unverified {
+            background: rgba(234, 179, 8, 0.12);
+            color: var(--unverified);
+        }
+
+        .v-pending {
+            background: rgba(148, 163, 184, 0.12);
+            color: var(--pending);
+        }
+
+        .v-contradicted {
+            background: rgba(239, 68, 68, 0.15);
+            color: var(--severity-critical);
+        }
+
+        /* ── Detail Panel ────────────────────────────────────────────────── */
+        #detail-panel {
+            display: none;
+            padding: 20px;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        #detail-panel.active {
+            display: block;
+        }
+
+        .detail-back {
+            font-size: 12px;
+            color: var(--accent-cyan);
+            cursor: pointer;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .detail-back:hover {
+            color: var(--text-primary);
+        }
+
+        .detail-section {
+            margin-bottom: 20px;
+        }
+
+        .detail-section h3 {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+        }
+
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 0;
+            font-size: 13px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+        }
+
+        .detail-row .label {
+            color: var(--text-muted);
+        }
+
+        .detail-row .value {
+            color: var(--text-primary);
+            font-weight: 500;
+            text-align: right;
+            max-width: 60%;
+        }
+
+        .detail-text {
+            font-size: 13px;
+            line-height: 1.6;
+            color: var(--text-secondary);
+            background: var(--bg-card);
+            border-radius: var(--radius-sm);
+            padding: 12px;
+            border: 1px solid var(--border);
+        }
+
+        /* ── Action Buttons ──────────────────────────────────────────────── */
+        .action-row {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .btn-action {
+            flex: 1;
+            padding: 10px 12px;
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            font-family: var(--font-main);
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: var(--bg-card);
+            color: var(--text-secondary);
+        }
+
+        .btn-action:hover {
+            border-color: var(--border-glow);
+            transform: translateY(-1px);
+        }
+
+        .btn-action.escalate {
+            color: var(--accent-orange);
+            border-color: rgba(249, 115, 22, 0.3);
+        }
+
+        .btn-action.escalate:hover {
+            background: rgba(249, 115, 22, 0.1);
+        }
+
+        .btn-action.resolve {
+            color: var(--accent-green);
+            border-color: rgba(34, 197, 94, 0.3);
+        }
+
+        .btn-action.resolve:hover {
+            background: rgba(34, 197, 94, 0.1);
+        }
+
+        .btn-action:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* ── Broadcast & Forms ───────────────────────────────────────────── */
+        .broadcast-panel {
+            padding: 16px;
+        }
+
+        .broadcast-panel h3 {
+            font-size: 14px;
+            font-weight: 700;
+            margin-bottom: 16px;
+            color: var(--text-primary);
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-group label {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-muted);
+            font-weight: 600;
+            display: block;
+            margin-bottom: 6px;
+        }
+
+        .form-group textarea,
+        .form-group input[type="text"] {
+            width: 100%;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            color: var(--text-primary);
+            font-family: var(--font-main);
+            font-size: 13px;
+            padding: 12px;
+            resize: vertical;
+            transition: border-color 0.2s;
+        }
+
+        .form-group textarea {
+            min-height: 90px;
+        }
+
+        .form-group textarea:focus,
+        .form-group input:focus {
+            outline: none;
+            border-color: var(--accent-cyan);
+            box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.1);
+        }
+
+        .radio-group {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .radio-option {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 8px 14px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .radio-option:hover {
+            border-color: var(--accent-cyan);
+        }
+
+        .radio-option input[type="radio"] {
+            accent-color: var(--accent-cyan);
+        }
+
+        .radio-option input[type="radio"]:checked+span {
+            color: var(--accent-cyan);
+        }
+
+        .checkbox-option {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 6px 12px;
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .checkbox-option:hover {
+            border-color: var(--accent-cyan);
+        }
+
+        .checkbox-option input[type="checkbox"] {
+            accent-color: var(--accent-cyan);
+        }
+
+        .user-checklist {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            max-height: 160px;
+            overflow-y: auto;
+            padding: 4px 0;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: var(--radius-sm);
+            font-family: var(--font-main);
+            font-size: 13px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: all 0.25s;
+            width: 100%;
+        }
+
+        .btn-broadcast {
+            background: linear-gradient(135deg, var(--accent-blue), var(--accent-purple));
+            color: white;
+            box-shadow: 0 4px 16px rgba(59, 130, 246, 0.3);
+        }
+
+        .btn-broadcast:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 24px rgba(59, 130, 246, 0.4);
+        }
+
+        .btn-broadcast:active {
+            transform: translateY(0);
+        }
+
+        .btn-broadcast:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-send-dm {
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-blue));
+            color: white;
+            box-shadow: 0 4px 16px rgba(6, 182, 212, 0.3);
+            margin-top: 8px;
+        }
+
+        .btn-send-dm:hover {
+            transform: translateY(-1px);
+        }
+
+        .broadcast-status {
+            margin-top: 12px;
+            font-size: 12px;
+            padding: 10px;
+            border-radius: var(--radius-sm);
+            display: none;
+        }
+
+        .broadcast-status.success {
+            display: block;
+            background: rgba(34, 197, 94, 0.1);
+            color: var(--severity-low);
+            border: 1px solid rgba(34, 197, 94, 0.2);
+        }
+
+        .broadcast-status.error {
+            display: block;
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--severity-critical);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+        }
+
+        /* ── Empty / DM section ──────────────────────────────────────────── */
+        .empty-state {
+            text-align: center;
+            padding: 60px 30px;
+            color: var(--text-muted);
+        }
+
+        .empty-state .icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+            opacity: 0.4;
+        }
+
+        .empty-state p {
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .dm-section {
+            background: var(--bg-panel);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 16px;
+            margin-top: 12px;
+        }
+
+        .dm-section h4 {
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--accent-cyan);
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* ── Map elements ────────────────────────────────────────────────── */
+        .custom-marker {
+            border-radius: 50%;
+            border: 3px solid white;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, .5);
+            transition: transform .2s;
+        }
+
+        .custom-marker:hover {
+            transform: scale(1.3);
+        }
+
+        .leaflet-popup-content-wrapper {
+            background: var(--bg-panel) !important;
+            color: var(--text-primary) !important;
+            border-radius: var(--radius) !important;
+            border: 1px solid var(--border) !important;
+            box-shadow: var(--shadow) !important;
+        }
+
+        .leaflet-popup-tip {
+            background: var(--bg-panel) !important;
+        }
+
+        .popup-content h4 {
+            font-size: 14px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+        }
+
+        .popup-content p {
+            font-size: 12px;
+            color: var(--text-secondary);
+            line-height: 1.5;
+            margin-bottom: 4px;
+        }
+
+        /* ── Scrollbar & animation ───────────────────────────────────────── */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--text-muted);
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(8px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* ── Chat History ─────────────────────────────────────────────── */
+        .chat-history {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            max-height: 320px;
+            overflow-y: auto;
+            padding: 8px;
+            background: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+        }
+
+        .chat-bubble {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 10px 12px;
+            position: relative;
+            animation: fadeIn 0.2s ease-out;
+        }
+
+        .chat-bubble-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6px;
+        }
+
+        .chat-bubble-type {
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .chat-bubble-time {
+            font-size: 10px;
+            color: var(--text-muted);
+        }
+
+        .chat-bubble-text {
+            font-size: 12px;
+            color: var(--text-secondary);
+            line-height: 1.5;
+            font-style: italic;
+        }
+
+        .chat-bubble-summary {
+            font-size: 11px;
+            color: var(--text-muted);
+            margin-top: 6px;
+            padding-top: 6px;
+            border-top: 1px solid rgba(255, 255, 255, 0.04);
+        }
+
+        .chat-bubble-meta {
+            display: flex;
+            gap: 6px;
+            margin-top: 6px;
+            flex-wrap: wrap;
+        }
+
+        .msg-count-badge {
+            font-size: 10px;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 10px;
+            background: rgba(139, 92, 246, 0.15);
+            color: var(--accent-purple);
+        }
+
+        @media (max-width: 900px) {
+            :root {
+                --sidebar-width: 340px;
+            }
+        }
+
+        @media (max-width: 640px) {
+            #sidebar {
+                display: none;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <header id="header">
+        <div class="header-left">
+            <div class="logo-icon">🛡️</div>
+            <div>
+                <div class="logo-text">AEGIS</div>
+                <div class="header-subtitle">Crisis Intelligence System</div>
+            </div>
+        </div>
+        <div class="header-right">
+            <div class="live-indicator">
+                <div class="live-dot"></div><span>LIVE</span>
+            </div>
+            <div class="stat-badge"><span>Active</span><span class="count" id="alert-count">0</span></div>
+            <div class="stat-badge"><span>Critical</span><span class="count" id="critical-count"
+                    style="color:var(--severity-critical);">0</span></div>
+        </div>
+    </header>
+
+    <div id="main-container">
+        <div id="map"></div>
+
+        <aside id="sidebar">
+            <div class="sidebar-tabs">
+                <div class="sidebar-tab active" data-tab="alerts" id="tab-alerts">🚨 Alerts</div>
+                <div class="sidebar-tab" data-tab="broadcast" id="tab-broadcast">📢 Broadcast</div>
+            </div>
+
+            <!-- Tab: Alerts List -->
+            <div class="tab-content active" id="content-alerts">
+                <div class="alert-list" id="alert-list">
+                    <div class="empty-state">
+                        <div class="icon">📡</div>
+                        <p>Waiting for incoming distress signals...<br>Alerts will appear here in real-time.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Detail Panel (injected into sidebar when alert clicked) -->
+            <div id="detail-panel">
+                <div class="detail-back" id="detail-back">← Back to alerts</div>
+                <div id="detail-content"></div>
+            </div>
+
+            <!-- Tab: Broadcast -->
+            <div class="tab-content" id="content-broadcast">
+                <div class="broadcast-panel">
+                    <h3>📢 Broadcast Emergency Alert</h3>
+                    <p style="font-size:12px;color:var(--text-muted);margin-bottom:20px;line-height:1.5;">
+                        Type your message in the responder language. AEGIS translates and delivers to each citizen in
+                        their native language.
+                    </p>
+
+                    <div class="form-group">
+                        <label>Recipients</label>
+                        <div class="radio-group">
+                            <label class="radio-option">
+                                <input type="radio" name="recipient_mode" value="all" checked
+                                    onchange="toggleUserList()">
+                                <span>🌍 All Users</span>
+                            </label>
+                            <label class="radio-option">
+                                <input type="radio" name="recipient_mode" value="selected" onchange="toggleUserList()">
+                                <span>👥 Selected Users</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="form-group" id="user-list-group" style="display:none;">
+                        <label>Select Users</label>
+                        <div class="user-checklist" id="user-checklist">
+                            <!-- Populated by JS -->
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Alert Message</label>
+                        <textarea id="broadcast-text"
+                            placeholder="e.g. Evacuazione immediata della zona costiera. Dirigersi verso la collina."></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Output Mode</label>
+                        <div class="radio-group">
+                            <label class="radio-option">
+                                <input type="radio" name="output_mode" value="elevenlabs">
+                                <span>🔊 ElevenLabs</span>
+                            </label>
+                            <label class="radio-option">
+                                <input type="radio" name="output_mode" value="text_only" checked>
+                                <span>📝 Text Only</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <button class="btn btn-broadcast" id="btn-broadcast" onclick="sendBroadcast()">
+                        📡 Send Broadcast
+                    </button>
+
+                    <div class="broadcast-status" id="broadcast-status"></div>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <script>
+        // ── Map ─────────────────────────────────────────────────────────────────────
+        const map = L.map('map', { center: [43.0, 12.0], zoom: 6, zoomControl: true });
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OSM</a> &copy; <a href="https://carto.com/">CARTO</a>',
+            subdomains: 'abcd', maxZoom: 19,
+        }).addTo(map);
+        document.querySelector('.leaflet-tile-pane').style.filter = 'none';
+
+        // ── State ───────────────────────────────────────────────────────────────────
+        let markers = {};
+        let currentAlerts = [];
+
+        const SEV_COLORS = { 5: '#ef4444', 4: '#f97316', 3: '#eab308', 2: '#22c55e', 1: '#3b82f6' };
+        const SEV_LABELS = { 5: 'CRITICAL', 4: 'HIGH', 3: 'MODERATE', 2: 'LOW', 1: 'INFO' };
+        const SEV_CSS = { 5: 'sev-critical', 4: 'sev-high', 3: 'sev-moderate', 2: 'sev-low', 1: 'sev-info' };
+        const STATUS_CSS = { active: 's-active', escalated: 's-escalated', resolved: 's-resolved' };
+
+        function createMarkerIcon(severity) {
+            const color = SEV_COLORS[severity] || SEV_COLORS[1];
+            const size = severity >= 4 ? 18 : 14;
+            return L.divIcon({
+                className: 'custom-marker',
+                html: `<div style="width:${size}px;height:${size}px;background:${color};border-radius:50%;border:2px solid rgba(255,255,255,0.8);box-shadow:0 0 12px ${color}80;"></div>`,
+                iconSize: [size, size], iconAnchor: [size / 2, size / 2],
+            });
+        }
+
+        // ── Fetch & Render ──────────────────────────────────────────────────────────
+        let _currentDetailAlertId = null;
+
+        async function fetchAlerts() {
+            try {
+                const resp = await fetch('/api/alerts');
+                if (!resp.ok) return;
+                const alerts = await resp.json();
+                currentAlerts = alerts;
+                renderAlerts(alerts);
+                renderMarkers(alerts);
+                updateStats(alerts);
+
+                // Auto-refresh detail panel logic is removed to stop annoying flickering.
+            } catch (err) { console.error('Fetch error:', err); }
+        }
+
+        function renderMarkers(alerts) {
+            Object.values(markers).forEach(m => map.removeLayer(m));
+            markers = {};
+
+            // Deduplicate: show only the HIGHEST severity alert per chat_id at each location
+            const seen = {};
+            const uniqueAlerts = [];
+            for (const a of alerts) {
+                if (a.lat == null || a.lng == null) continue;
+                if (a.status === 'resolved') continue;  // don't show resolved on map
+                const key = a.chat_id;
+                if (!seen[key] || a.severity > seen[key].severity) {
+                    seen[key] = a;
+                }
+            }
+            Object.values(seen).forEach(alert => {
+                const icon = createMarkerIcon(alert.severity);
+                const marker = L.marker([alert.lat, alert.lng], { icon })
+                    .addTo(map)
+                    .bindPopup(`
+                <div class="popup-content">
+                    <h4>${escHtml(alert.incident_type || 'Unknown')}</h4>
+                    <p><strong>Severity:</strong> ${alert.severity}/5 — ${SEV_LABELS[alert.severity] || 'N/A'}</p>
+                    <p>${escHtml(alert.summary_local || alert.summary_en || alert.raw_text || '')}</p>
+                    <p style="margin-top:6px;font-size:11px;color:#64748b;">Alert #${alert.id} · ${timeAgo(alert.timestamp)}</p>
+                </div>
+            `);
+                marker.on('click', () => showDetail(alert));
+                markers[alert.id] = marker;
+            });
+        }
+
+        function renderAlerts(alerts) {
+            const container = document.getElementById('alert-list');
+
+            if (!alerts.length) {
+                container.innerHTML = `<div class="empty-state"><div class="icon">📡</div><p>Waiting for incoming distress signals...<br>Alerts will appear here in real-time.</p></div>`;
+                return;
+            }
+
+            container.innerHTML = alerts.map(a => `
+        <div class="alert-card severity-${a.severity} ${a.status === 'resolved' ? 'resolved' : ''}" onclick="showDetail(currentAlerts.find(x=>x.id===${a.id}))">
+            <div class="alert-card-header">
+                <span class="alert-type">${escHtml(a.incident_type || 'Unknown')}</span>
+                <div style="display:flex;gap:6px;align-items:center;">
+                    ${(a.message_count || 0) > 1 ? `<span class="msg-count-badge">💬 ${a.message_count} msgs</span>` : ''}
+                    <span class="severity-badge ${SEV_CSS[a.severity] || 'sev-info'}">${SEV_LABELS[a.severity] || 'INFO'}</span>
+                </div>
+            </div>
+            <div class="alert-summary">${escHtml(a.summary_local || a.summary_en || '').substring(0, 120)}${(a.summary_local || '').length > 120 ? '...' : ''}</div>
+            <div class="alert-meta">
+                <div class="alert-meta-left">
+                    <span>${timeAgo(a.timestamp)}</span>
+                    <span class="status-flag ${STATUS_CSS[a.status] || 's-active'}">${a.status || 'active'}</span>
+                </div>
+                <span class="verification-flag v-${a.verification_status || 'pending'}">${(a.verification_status || 'pending').replace('_', ' ')}</span>
+            </div>
+        </div>
+    `).join('');
+        }
+
+        function updateStats(alerts) {
+            const active = alerts.filter(a => a.status !== 'resolved');
+            document.getElementById('alert-count').textContent = active.length;
+            document.getElementById('critical-count').textContent = active.filter(a => a.severity >= 4).length;
+        }
+
+        // ── Detail Panel ────────────────────────────────────────────────────────────
+        function showDetail(alert) {
+            if (!alert) return;
+            _currentDetailAlertId = alert.id;
+
+            const panel = document.getElementById('detail-panel');
+            const content = document.getElementById('detail-content');
+            const alertList = document.getElementById('content-alerts');
+
+            alertList.classList.remove('active');
+            panel.classList.add('active');
+            panel.style.display = 'block';
+
+            if (alert.lat && alert.lng) {
+                map.flyTo([alert.lat, alert.lng], 12, { duration: 0.8 });
+            }
+
+            const isResolved = alert.status === 'resolved';
+            const currentSev = alert.severity || 1;
+            const canEscalate = currentSev < 5 && !isResolved;
+            const feedbackLabel = { 'yes_received_support': '✅ User confirmed: received support', 'no_support_received': '❌ User reported: NO support received' }[alert.feedback] || '';
+
+            content.innerHTML = `
+        <div style="margin-bottom:16px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+                <span class="alert-type" style="font-size:18px;">${escHtml(alert.incident_type || 'Unknown')}</span>
+                <span class="severity-badge ${SEV_CSS[currentSev]}" style="font-size:12px;padding:5px 14px;">
+                    ${SEV_LABELS[currentSev]} (${currentSev}/5)
+                </span>
+            </div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                <span class="status-flag ${STATUS_CSS[alert.status] || 's-active'}" style="font-size:11px;padding:4px 12px;">
+                    Status: ${alert.status || 'active'}
+                </span>
+                <span class="verification-flag v-${alert.verification_status || 'pending'}" style="font-size:11px;padding:4px 12px;">
+                    Verification: ${(alert.verification_status || 'pending').replace('_', ' ')}
+                    ${alert.verification_score ? ` (${alert.verification_score}/10)` : ''}
+                </span>
+            </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="detail-section">
+            <h3>Actions</h3>
+            <div class="action-row">
+                <button class="btn-action escalate" onclick="escalateAlert(${alert.id}, ${currentSev})" ${canEscalate ? '' : 'disabled'}>
+                    ⬆ Escalate${canEscalate ? ` → ${SEV_LABELS[currentSev + 1] || ''}` : ''}
+                </button>
+                <button class="btn-action resolve" onclick="resolveAlert(${alert.id})" ${isResolved ? 'disabled' : ''}>
+                    ${isResolved ? '✅ Resolved' : '✓ Resolve & Close'}
+                </button>
+            </div>
+        </div>
+
+        <div class="detail-section">
+            <h3>Summary</h3>
+            <div class="detail-text">${escHtml(alert.summary_en || 'N/A')}</div>
+        </div>
+
+        <!-- Chat History (loaded async) -->
+        <div class="detail-section">
+            <h3>💬 Message History (${alert.message_count || 1} messages)</h3>
+            <div class="chat-history" id="chat-history-${alert.id}">
+                <div style="text-align:center;padding:16px;color:var(--text-muted);font-size:12px;">Loading messages...</div>
+            </div>
+        </div>
+
+        <!-- Activity Log (loaded async) -->
+        <div class="detail-section">
+            <h3>📝 Activity Log</h3>
+            <div class="chat-history" id="activity-log-${alert.id}" style="max-height:180px;">
+                <div style="text-align:center;padding:16px;color:var(--text-muted);font-size:12px;">Loading logs...</div>
+            </div>
+        </div>
+
+        ${alert.verification_summary ? `
+        <div class="detail-section">
+            <h3>Verification Details</h3>
+            <div class="detail-text">${escHtml(alert.verification_summary)}</div>
+        </div>` : ''}
+
+        <!-- User Contact Info -->
+        <div class="detail-section">
+            <h3>👤 Victim Contact</h3>
+            <div class="detail-row"><span class="label">Name</span><span class="value">${escHtml(alert.user_name || 'Unknown')}</span></div>
+            ${alert.user_username ? `<div class="detail-row"><span class="label">Telegram</span><span class="value"><a href="https://t.me/${escHtml(alert.user_username)}" target="_blank" style="color:var(--accent-cyan);">@${escHtml(alert.user_username)}</a></span></div>` : ''}
+            ${alert.user_phone ? `<div class="detail-row"><span class="label">Phone</span><span class="value"><a href="tel:${escHtml(alert.user_phone)}" style="color:var(--accent-cyan);">${escHtml(alert.user_phone)}</a></span></div>` : ''}
+            <div class="detail-row"><span class="label">Chat ID</span><span class="value">${alert.chat_id}</span></div>
+        </div>
+
+        <div class="detail-section">
+            <h3>Details</h3>
+            <div class="detail-row"><span class="label">Alert ID</span><span class="value">#${alert.id}</span></div>
+            <div class="detail-row"><span class="label">Language</span><span class="value">${escHtml(alert.detected_language || 'Unknown')}</span></div>
+            <div class="detail-row"><span class="label">Location</span><span class="value">${escHtml(alert.location_name || (alert.lat != null ? alert.lat.toFixed(4) + ', ' + alert.lng.toFixed(4) : 'Pending'))}</span></div>
+            <div class="detail-row"><span class="label">People</span><span class="value">${escHtml(alert.people_count || 'Unknown')}</span></div>
+            <div class="detail-row"><span class="label">Trapped</span><span class="value">${alert.trapped ? '⚠️ YES' : 'No'}</span></div>
+            <div class="detail-row"><span class="label">Needs</span><span class="value">${escHtml(alert.needs || 'N/A')}</span></div>
+            <div class="detail-row"><span class="label">Coordinates</span><span class="value">${alert.lat != null ? alert.lat.toFixed(5) + ', ' + alert.lng.toFixed(5) : 'Pending'}</span></div>
+            <div class="detail-row"><span class="label">Timestamp</span><span class="value">${alert.timestamp || 'N/A'}</span></div>
+            ${feedbackLabel ? `<div class="detail-row"><span class="label">Feedback</span><span class="value">${feedbackLabel}</span></div>` : ''}
+        </div>
+
+        <!-- Direct Message to This User -->
+        <div class="dm-section">
+            <h4>💬 Send Message to This User</h4>
+            <div class="form-group" style="margin-bottom:10px;">
+                <textarea id="dm-text-${alert.id}" placeholder="Type a message for this user..." style="min-height:60px;"></textarea>
+            </div>
+            <div class="form-group" style="margin-bottom:10px;">
+                <div class="radio-group">
+                    <label class="radio-option">
+                        <input type="radio" name="dm_mode_${alert.id}" value="elevenlabs">
+                        <span>🔊 Voice</span>
+                    </label>
+                    <label class="radio-option">
+                        <input type="radio" name="dm_mode_${alert.id}" value="text_only" checked>
+                        <span>📝 Text</span>
+                    </label>
+                </div>
+            </div>
+            <button class="btn btn-send-dm" onclick="sendDirectMessage(${alert.chat_id}, ${alert.id})">
+                📩 Send to User (${escHtml(alert.detected_language || 'Unknown')})
+            </button>
+            <div class="broadcast-status" id="dm-status-${alert.id}"></div>
+        </div>
+    `;
+
+            // Load chat history and activity log asynchronously
+            loadChatHistory(alert.id);
+            loadActivityLog(alert.id);
+        }
+
+        async function loadChatHistory(alertId) {
+            const container = document.getElementById(`chat-history-${alertId}`);
+            if (!container) return;
+
+            try {
+                const resp = await fetch(`/api/alerts/${alertId}/messages`);
+                if (!resp.ok) { container.innerHTML = '<p style="color:var(--text-muted);font-size:12px;padding:8px;">Failed to load messages.</p>'; return; }
+                const messages = await resp.json();
+
+                if (!messages.length) {
+                    container.innerHTML = '<p style="color:var(--text-muted);font-size:12px;padding:8px;">No messages yet.</p>';
+                    return;
+                }
+
+                container.innerHTML = messages.map((m, i) => `
+                    <div class="chat-bubble">
+                        <div class="chat-bubble-header">
+                            <span class="chat-bubble-type" style="color:${SEV_COLORS[m.severity] || SEV_COLORS[1]};">
+                                ${m.incident_type !== 'unknown' ? escHtml(m.incident_type) : 'Message'}
+                                <span class="severity-badge ${SEV_CSS[m.severity] || 'sev-info'}" style="font-size:8px;padding:1px 6px;margin-left:4px;">${SEV_LABELS[m.severity] || 'INFO'}</span>
+                            </span>
+                            <span class="chat-bubble-time">#${i + 1} · ${timeAgo(m.timestamp)}</span>
+                        </div>
+                        <div class="chat-bubble-text">"${escHtml(m.raw_text || '')}"</div>
+                        ${m.summary_en ? `<div class="chat-bubble-summary">📋 ${escHtml(m.summary_en)}</div>` : ''}
+                        <div class="chat-bubble-meta">
+                            ${m.people_count && m.people_count !== 'unknown' ? `<span style="font-size:10px;color:var(--text-muted);">👥 ${escHtml(m.people_count)}</span>` : ''}
+                            ${m.trapped ? '<span style="font-size:10px;color:var(--severity-critical);">⚠️ Trapped</span>' : ''}
+                            ${m.needs ? `<span style="font-size:10px;color:var(--text-muted);">🆘 ${escHtml(m.needs)}</span>` : ''}
+                        </div>
+                    </div>
+                `).join('');
+
+                // Auto-scroll to latest message
+                container.scrollTop = container.scrollHeight;
+            } catch (err) {
+                container.innerHTML = `<p style="color:var(--severity-critical);font-size:12px;padding:8px;">Error: ${err.message}</p>`;
+            }
+        }
+
+        async function loadActivityLog(alertId) {
+            const container = document.getElementById(`activity-log-${alertId}`);
+            if (!container) return;
+
+            try {
+                const resp = await fetch(`/api/alerts/${alertId}/logs`);
+                if (!resp.ok) { container.innerHTML = '<p style="color:var(--text-muted);font-size:12px;padding:8px;">Failed to load logs.</p>'; return; }
+                const logs = await resp.json();
+
+                if (!logs.length) {
+                    container.innerHTML = '<p style="color:var(--text-muted);font-size:12px;padding:8px;">No activity logged yet.</p>';
+                    return;
+                }
+
+                container.innerHTML = logs.map((l, i) => `
+                    <div class="chat-bubble" style="padding:6px 10px;border-left:2px solid var(--accent-cyan);">
+                        <div class="chat-bubble-header">
+                            <span class="chat-bubble-type" style="color:var(--text-secondary);font-weight:bold;">${escHtml(l.action).toUpperCase().replace(/_/g, ' ')}</span>
+                            <span class="chat-bubble-time">${timeAgo(l.timestamp)}</span>
+                        </div>
+                        <div class="chat-bubble-text" style="font-style:normal;">${escHtml(l.details || '')}</div>
+                        <div class="chat-bubble-meta">
+                            <span style="font-size:9px;color:var(--text-muted);text-transform:uppercase;">By: ${escHtml(l.source || 'system')}</span>
+                        </div>
+                    </div>
+                `).join('');
+
+                container.scrollTop = container.scrollHeight;
+            } catch (err) {
+                container.innerHTML = `<p style="color:var(--severity-critical);font-size:12px;padding:8px;">Error: ${err.message}</p>`;
+            }
+        }
+
+        document.getElementById('detail-back').addEventListener('click', () => {
+            _currentDetailAlertId = null;
+            document.getElementById('detail-panel').classList.remove('active');
+            document.getElementById('detail-panel').style.display = 'none';
+            document.getElementById('content-alerts').classList.add('active');
+        });
+
+        // ── Alert Status Actions ────────────────────────────────────────────────────
+        async function escalateAlert(alertId, currentSev) {
+            const newSev = Math.min(5, currentSev + 1);
+            try {
+                const resp = await fetch(`/api/alerts/${alertId}/status`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: 'escalated', severity: newSev }),
+                });
+                if (resp.ok) {
+                    await fetchAlerts();
+                    const updated = currentAlerts.find(a => a.id === alertId);
+                    if (updated) showDetail(updated);
+                }
+            } catch (err) { console.error('Escalate error:', err); }
+        }
+
+        async function resolveAlert(alertId) {
+            try {
+                const resp = await fetch(`/api/alerts/${alertId}/status`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: 'resolved' }),
+                });
+                if (resp.ok) {
+                    await fetchAlerts();
+                    const updated = currentAlerts.find(a => a.id === alertId);
+                    if (updated) showDetail(updated);
+                }
+            } catch (err) { console.error('Resolve error:', err); }
+        }
+
+        // ── Direct Message ──────────────────────────────────────────────────────────
+        async function sendDirectMessage(chatId, alertId) {
+            const text = document.getElementById(`dm-text-${alertId}`).value.trim();
+            const mode = document.querySelector(`input[name="dm_mode_${alertId}"]:checked`)?.value || 'text_only';
+            const statusEl = document.getElementById(`dm-status-${alertId}`);
+
+            if (!text) {
+                statusEl.className = 'broadcast-status error';
+                statusEl.textContent = '⚠️ Please enter a message.';
+                return;
+            }
+
+            statusEl.className = 'broadcast-status'; statusEl.style.display = 'none';
+
+            try {
+                const resp = await fetch('/api/send_message', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ chat_id: chatId, message: text, output_mode: mode }),
+                });
+                const data = await resp.json();
+                if (resp.ok) {
+                    statusEl.className = 'broadcast-status success';
+                    statusEl.textContent = `✅ Message sent to user (translated to ${data.language || 'their language'}).`;
+                    document.getElementById(`dm-text-${alertId}`).value = '';
+                } else {
+                    statusEl.className = 'broadcast-status error';
+                    statusEl.textContent = `❌ ${data.error || 'Send failed.'}`;
+                }
+            } catch (err) {
+                statusEl.className = 'broadcast-status error';
+                statusEl.textContent = `❌ Network error: ${err.message}`;
+            }
+        }
+
+        // ── Tab switching ───────────────────────────────────────────────────────────
+        document.querySelectorAll('.sidebar-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.sidebar-tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                tab.classList.add('active');
+                document.getElementById('content-' + tab.dataset.tab).classList.add('active');
+                document.getElementById('detail-panel').style.display = 'none';
+                document.getElementById('detail-panel').classList.remove('active');
+
+                // Populate user checklist when switching to broadcast tab
+                if (tab.dataset.tab === 'broadcast') populateUserChecklist();
+            });
+        });
+
+        // ── User checklist for selective broadcast ──────────────────────────────────
+        function toggleUserList() {
+            const mode = document.querySelector('input[name="recipient_mode"]:checked')?.value;
+            document.getElementById('user-list-group').style.display = mode === 'selected' ? 'block' : 'none';
+            if (mode === 'selected') populateUserChecklist();
+        }
+
+        function populateUserChecklist() {
+            const container = document.getElementById('user-checklist');
+            // Unique users from alerts
+            const userMap = {};
+            currentAlerts.forEach(a => {
+                if (!userMap[a.chat_id]) {
+                    userMap[a.chat_id] = { chat_id: a.chat_id, language: a.detected_language || 'Unknown', latest_type: a.incident_type };
+                }
+            });
+            const users = Object.values(userMap);
+
+            if (!users.length) {
+                container.innerHTML = '<p style="font-size:11px;color:var(--text-muted);padding:8px;">No users registered yet.</p>';
+                return;
+            }
+
+            container.innerHTML = users.map(u => `
+        <label class="checkbox-option">
+            <input type="checkbox" name="selected_users" value="${u.chat_id}">
+            <span>User ${u.chat_id} · ${escHtml(u.language)} · ${escHtml(u.latest_type || '')}</span>
+        </label>
+    `).join('');
+        }
+
+        // ── Broadcast ───────────────────────────────────────────────────────────────
+        async function sendBroadcast() {
+            const text = document.getElementById('broadcast-text').value.trim();
+            const mode = document.querySelector('input[name="output_mode"]:checked')?.value || 'text_only';
+            const recipientMode = document.querySelector('input[name="recipient_mode"]:checked')?.value || 'all';
+            const statusEl = document.getElementById('broadcast-status');
+            const btn = document.getElementById('btn-broadcast');
+
+            if (!text) {
+                statusEl.className = 'broadcast-status error';
+                statusEl.textContent = '⚠️ Please enter a message.';
+                return;
+            }
+
+            // Resolve chat_ids
+            let chatIds = 'all';
+            if (recipientMode === 'selected') {
+                const checked = document.querySelectorAll('input[name="selected_users"]:checked');
+                if (!checked.length) {
+                    statusEl.className = 'broadcast-status error';
+                    statusEl.textContent = '⚠️ Please select at least one user.';
+                    return;
+                }
+                chatIds = Array.from(checked).map(cb => parseInt(cb.value));
+            }
+
+            btn.disabled = true;
+            btn.textContent = '⏳ SENDING...';
+            statusEl.className = 'broadcast-status';
+            statusEl.style.display = 'none';
+
+            try {
+                const resp = await fetch('/api/broadcast', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: text, output_mode: mode, chat_ids: chatIds }),
+                });
+                const data = await resp.json();
+                if (resp.ok) {
+                    const sent = data.broadcast_results?.filter(r => r.status === 'sent').length || 0;
+                    statusEl.className = 'broadcast-status success';
+                    statusEl.textContent = `✅ Broadcast delivered to ${sent} user(s) — each in their native language.`;
+                } else {
+                    statusEl.className = 'broadcast-status error';
+                    statusEl.textContent = `❌ ${data.error || 'Broadcast failed.'}`;
+                }
+            } catch (err) {
+                statusEl.className = 'broadcast-status error';
+                statusEl.textContent = `❌ Network error: ${err.message}`;
+            }
+
+            btn.disabled = false;
+            btn.textContent = '📡 Send Broadcast';
+        }
+
+        // ── Utilities ───────────────────────────────────────────────────────────────
+        function escHtml(str) {
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+
+        function timeAgo(ts) {
+            if (!ts) return '';
+            const safeTs = ts.replace(' ', 'T') + (ts.includes('Z') ? '' : 'Z');
+            const diff = (Date.now() - new Date(safeTs).getTime()) / 1000;
+            if (isNaN(diff)) return 'just now';
+            if (diff < 60) return 'just now';
+            if (diff < 3600) return Math.floor(diff / 60) + 'm ago';
+            if (diff < 86400) return Math.floor(diff / 3600) + 'h ago';
+            return Math.floor(diff / 86400) + 'd ago';
+        }
+
+        // ── Auto-refresh ────────────────────────────────────────────────────────────
+        fetchAlerts();
+        setInterval(fetchAlerts, 5000);
+    </script>
+
+</body>
+
+</html>

@@ -1,0 +1,7 @@
+flask>=3.0
+python-telegram-bot>=20.0
+mistralai>=1.0
+elevenlabs>=1.0
+python-dotenv>=1.0
+requests>=2.31
+duckduckgo-search>=8.0
