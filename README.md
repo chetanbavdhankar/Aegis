@@ -183,6 +183,11 @@ Submit the generated HTTPS URL to judges.
 *   **Contact Information Capture:** `/start` flow now securely requests Telegram profile info + native phone number sharing for emergency out-of-band contact.
 *   **Message Deduplication:** Implemented strict DB-level checking (`db.is_duplicate_message`) to prevent UI clutter from duplicate texts caused by network retries or bot restarts.
 *   **Targeted Broadcasts:** The dashboard now supports selective messaging to specific victims from the Broadcast panel, translating outbound messages into their native languages.
+*   **Story Interface Integration:** Updated the external story presentation (`AEGIS_Story_V3.html`) to link directly to the live local dashboard.
+    - **Why**: Ensures that viewers of the interactive story can transition seamlessly into the live operating environment for a full end-to-end demo.
+    - **How**: Modified the `href` of the "Enter the Dashboard" terminal call-to-action to target the local Flask instance (`http://127.0.0.1:5000`).
+    - **Impact**: Streamlined presentation flow for judges and users.
+
 
 ## Technical Debt Log
 
