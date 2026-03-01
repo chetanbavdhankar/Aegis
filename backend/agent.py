@@ -60,29 +60,34 @@ def _ensure_agent() -> str:
     return _agent_id
 
 
-_AGENT_INSTRUCTIONS = """You are AEGIS Verification Agent. Your job is to verify emergency incident reports
-by searching the web for corroborating evidence.
+_AGENT_INSTRUCTIONS = """You are AEGIS Verification Agent. Your job is to verify emergency incident reports and evaluate their severity.
 
-When given an incident report:
-1. Use web_search to find related news, government alerts, or social media reports.
-2. Search MULTIPLE times with different queries:
-   - In English (e.g., "flood Juiz de Fora Brazil")
-   - In the LOCAL language (e.g., "enchente Juiz de Fora")
-   - With date context (add "2026" or "today" or "recent")
-3. ALWAYS use the EXACT location from the report. NEVER substitute a different location.
-4. After searching, return ONLY a valid JSON object (no markdown):
+When given an incident report and the user's distress messages:
+1. Review the user's messages to understand what kind of help they need.
+2. Use web_search to find related news, government alerts, or social media reports in their location.
+3. Search MULTIPLE times with different queries (English, local language, current date context). NEVER substitute a different location.
+4. Evaluate the true severity of the alert from 1 to 5 strictly based on the text and news:
+   - CRITICAL RULE: If the user's message is generic (e.g., "help", "hello") without details, the severity MUST remain 1.
+   - ONLY evaluate higher than 1 if you have specific details about the emergency from the user AND/OR the web search confirms a high-level incident.
+   1 = INFO / GENERIC (generic message or non-emergency)
+   2 = LOW (minor inconvenience)
+   3 = MODERATE (property risk, no immediate life threat)
+   4 = HIGH (people at risk, situation escalating)
+   5 = CRITICAL (people trapped/injured, immediate danger to life)
+5. After searching and evaluating, return ONLY a valid JSON object (no markdown):
 
 {
   "verification_status": "<verified|partially_verified|unverified|contradicted>",
   "confidence_score": <integer 1-10>,
-  "summary": "<2-3 sentences explaining what evidence you found, citing specific sources>",
+  "evaluated_severity": <integer 1-5>,
+  "summary": "<3-5 sentences explaining your severity evaluation based on the user's messages, and what evidence you found online citing specific sources>",
   "sources": ["<url1>", "<url2>"]
 }
 
 Rules:
 - Never hallucinate sources — only cite what the search returned.
-- If no results found, return confidence_score=3 and status="unverified".
-- Use the GPS coordinates to identify the correct location if provided."""
+- If no results found, return confidence_score=3 and status="unverified", but STILL calculate evaluated_severity based purely on the user's messages.
+- ALWAYS return plain JSON (no markdown block fencing)."""
 
 
 def reverse_geocode(lat: float, lng: float) -> str:
@@ -176,12 +181,16 @@ def verify_incident(
     try:
         agent_id = _ensure_agent()
 
+        messages_db = db.get_messages_for_alert(alert_id)
+        user_messages_str = "\n".join(f"- {m['raw_text']}" for m in messages_db) if messages_db else "No messages provided."
+
         user_content = (
-            f"Verify this incident report:\n"
+            f"Verify and evaluate this incident report:\n"
             f"Type: {incident_type}\n"
             f"Location: {effective_location}\n"
             f"{'GPS: ' + str(lat) + ', ' + str(lng) if lat is not None else ''}\n"
-            f"Search the web to check if this is real and currently happening."
+            f"User Distress Messages:\n{user_messages_str}\n\n"
+            f"Search the web to check if this is real and currently happening in the area, and evaluate the severity level."
         )
 
         messages = [{"role": "user", "content": user_content}]
@@ -241,7 +250,7 @@ def verify_incident(
             messages.append({"role": "assistant", "content": content or ""})
             messages.append({
                 "role": "user",
-                "content": "Return ONLY a JSON object with verification_status, confidence_score, summary, sources.",
+                "content": "Return ONLY a JSON object with verification_status, confidence_score, evaluated_severity, summary, sources.",
             })
             data = _agent_complete(agent_id, messages)
             content = data.get("choices", [{}])[0].get("message", {}).get("content", "")
@@ -255,6 +264,14 @@ def verify_incident(
         result = json.loads(content)
         status = result.get("verification_status", "unverified")
         score = int(result.get("confidence_score", 3))
+        
+        evaluated_sev = result.get("evaluated_severity")
+        if evaluated_sev is not None:
+            try:
+                evaluated_sev = max(1, min(5, int(evaluated_sev)))
+            except ValueError:
+                evaluated_sev = None
+
         summary = result.get("summary", "Verification completed.")
 
         # Append sources to summary
@@ -264,11 +281,11 @@ def verify_incident(
             if source_list:
                 summary = f"{summary}\n\nSources: {source_list}"
 
-        logger.info("Verification for alert #%d: %s (score=%d)", alert_id, status, score)
+        logger.info("Verification for alert #%d: %s (score=%d, severty=%s)", alert_id, status, score, evaluated_sev)
 
     except Exception as e:
         logger.error("Verification agent error for alert #%d: %s", alert_id, e)
-        status, summary, score = "pending", f"Verification failed: {e}", 0
+        status, summary, score, evaluated_sev = "pending", f"Verification failed: {e}", 0, None
 
-    db.update_alert_verification(alert_id, status, summary, score)
-    return {"verification_status": status, "summary": summary, "confidence_score": score}
+    db.update_alert_verification(alert_id, status, summary, score, evaluated_sev)
+    return {"verification_status": status, "summary": summary, "confidence_score": score, "evaluated_severity": evaluated_sev}
