@@ -27,14 +27,14 @@ logger = logging.getLogger("aegis.app")
 
 app = Flask(
     __name__,
-    template_folder="../templates",
+    template_folder="../frontend",
     static_folder="../static",
 )
 
 
 @app.route("/")
 def dashboard():
-    return render_template("index.html")
+    return render_template("index-integrated.html")
 
 
 @app.route("/api/alerts")
@@ -243,8 +243,30 @@ async def _send_telegram_message(chat_id: int, text: str, audio_bytes: bytes | N
 
 
 def main() -> None:
+    import os
+    import time
+    import webbrowser
+    import urllib.request
+    from threading import Thread
+
     db.init_db()
     logger.info("AEGIS Dashboard starting on %s:%d", FLASK_HOST, FLASK_PORT)
+    
+    if not os.environ.get("WERKZEUG_RUN_MAIN"):
+        url = f"http://{'127.0.0.1' if FLASK_HOST == '0.0.0.0' else FLASK_HOST}:{FLASK_PORT}/"
+        
+        def _open_browser():
+            for _ in range(15):
+                try:
+                    res = urllib.request.urlopen(url)
+                    if res.getcode() == 200:
+                        webbrowser.open(url)
+                        break
+                except Exception:
+                    time.sleep(1)
+
+        Thread(target=_open_browser, daemon=True).start()
+        
     app.run(host=FLASK_HOST, port=FLASK_PORT, debug=FLASK_DEBUG)
 
 

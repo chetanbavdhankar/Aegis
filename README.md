@@ -94,27 +94,24 @@ pip install -r requirements.txt
 ### 3. Configure Environment
 
 ```bash
-cp .env.example .env
-# Edit .env with your API keys
+# Run the interactive setup script to add your API keys
+python setup_env.py
 ```
 
-### 4. Run (Two Terminals)
+### 4. Run AEGIS Master Script 
 
-**Terminal 1 — Telegram Bot:**
-```bash
-python -m backend.bot
-```
+Both the core backend (Flask dashboard) and the listening sensor (Telegram bot) have been aggregated into a unified boot process. You now only require a single terminal to deploy AEGIS.
 
-**Terminal 2 — Flask Dashboard:**
 ```bash
-python -m backend.app
+python run.py
 ```
 
 ### 5. Access Dashboard
 
-Open `http://localhost:5000` in your browser.
+Your default browser will automatically launch and open the dashboard (e.g., `http://127.0.0.1:5000`) instantly alongside the boot-up sequence.
 
 ### 6. Deploy with Ngrok (Optional)
+
 
 ```bash
 ngrok http 5000
@@ -168,6 +165,19 @@ Submit the generated HTTPS URL to judges.
 
 ## Recent Enhancements (March 2026)
 
+*   **Auto-Launch Dashboard:** Added intelligent scripting to the Flask boot process.
+    - **Why**: Responders need immediate access to UI without having to find and copy URLs across terminals in high-stress crisis scenarios.
+    - **How**: Embedded python's `webbrowser` bound to a deferred threading `Timer` into the backend's main executable.
+    - **Impact**: Zero-click access to the UI. Running `python -m backend.app` instantly spawns the dashboard in the default browser.
+*   **Unified Boot Daemon (`run.py`):** Coalesced terminal execution parameters.
+    - **Why**: Requiring users to spin up two simultaneous python processes across separate console tabs creates needless friction.
+    - **How**: Developed a multiplexer python script leveraging standard `subprocess.Popen` to fork both `backend.bot` and `backend.app` cleanly out of a single command instruction.
+    - **Impact**: One-click holistic system power-on and graceful cross-process teardowns upon manual interrupt.
+
+*   **Interactive Environment Config:** Added `setup_env.py` script.
+    - **Why**: Hardcoded CLI edits or manual text file alterations risk secret exposure and UX friction.
+    - **How**: A python script reads `.env.example`, requests user input in terminal, and maps variables iteratively to `.env`.
+    - **Impact**: Accelerates installation pipeline securely without exposing plain text files to IDE autosaves accidentally committing.
 *   **Comprehensive Audit Logs:** Implemented `alert_logs` table for tracking the entire lifecycle of an incident across all system actors (Citizen, AI Agent, Dashboard Responder).
 *   **Resolution Feedback Loop:** Automatically dispatches a Telegram poll to victims when an alert is marked 'Resolved', closing the loop on support effectiveness and updating the dashboard dynamically.
 *   **Contact Information Capture:** `/start` flow now securely requests Telegram profile info + native phone number sharing for emergency out-of-band contact.
