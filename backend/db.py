@@ -359,7 +359,7 @@ def update_latest_alert_location(chat_id: int, lat: float, lng: float) -> int | 
 
 # ── Verification ─────────────────────────────────────────────────────────────
 
-def update_alert_verification(alert_id: int, status: str, summary: str, score: int) -> None:
+def update_alert_verification(alert_id: int, status: str, summary: str, score: int, evaluated_severity: int = None) -> None:
     now = datetime.now(timezone.utc).isoformat()
     with _write_lock:
         conn = get_connection()
@@ -368,9 +368,16 @@ def update_alert_verification(alert_id: int, status: str, summary: str, score: i
                    verification_score = ? WHERE id = ?""",
             (status, summary, score, alert_id),
         )
+        if evaluated_severity is not None:
+            sev_label = _SEV_LABELS.get(evaluated_severity, "INFO")
+            conn.execute(
+                "UPDATE alerts SET severity = ?, severity_label = ? WHERE id = ?",
+                (evaluated_severity, sev_label, alert_id),
+            )
+            
         conn.execute(
             "INSERT INTO alert_logs (alert_id, action, details, source, timestamp) VALUES (?, ?, ?, ?, ?)",
-            (alert_id, "verification_updated", f"Status: {status}, Score: {score}", "agent", now)
+            (alert_id, "verification_updated", f"Status: {status}, Score: {score}, Evaluated Severity: {evaluated_severity}", "agent", now)
         )
         conn.commit()
         conn.close()

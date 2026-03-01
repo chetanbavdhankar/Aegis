@@ -106,6 +106,26 @@ def api_update_alert_status(alert_id: int):
     return jsonify({"ok": True, "alert_id": alert_id, "status": new_status})
 
 
+@app.route("/api/alerts/<int:alert_id>/verify", methods=["POST"])
+def api_alert_verify(alert_id: int):
+    """Manually re-trigger the AI verification agent for an alert."""
+    alert = db.get_alert_by_id(alert_id)
+    if not alert:
+        return jsonify({"error": "Alert not found."}), 404
+
+    # Run in background
+    from backend.agent import verify_incident
+    import threading
+    threading.Thread(
+        target=verify_incident,
+        args=(alert_id, alert.get("incident_type", "unknown"), alert.get("location_name", "")),
+        kwargs={"lat": alert.get("lat"), "lng": alert.get("lng")},
+        daemon=True,
+    ).start()
+
+    return jsonify({"ok": True, "message": "Verification agent dispatched."})
+
+
 async def _send_feedback_poll(chat_id: int, alert_id: int) -> None:
     """Send a Telegram poll asking if the user received support."""
     from telegram import Bot
