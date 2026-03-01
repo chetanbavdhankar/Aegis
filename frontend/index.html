@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AEGIS — Crisis Intelligence</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Instrument+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg: #000000;
+            --bg-secondary: #0b0b0b;
+            --bg-tertiary: #141414;
+            --border: #222;
+            --border-light: #333;
+            --text: #f5f5f5;
+            --text-secondary: #888;
+            --text-muted: #555;
+            --accent: #fff;
+            --accent-dim: rgba(255,255,255,0.6);
+            --glow: rgba(255,255,255,0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            height: 100%;
+            overflow: hidden;
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Instrument Sans', -apple-system, sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Stars background */
+        .stars {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .star {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            background: white;
+            border-radius: 50%;
+            opacity: 0;
+            animation: twinkle 8s infinite;
+        }
+
+        @keyframes twinkle {
+            0%, 100% { opacity: 0; }
+            50% { opacity: 0.8; }
+        }
+
+        /* Layout */
+        .app {
+            position: relative;
+            z-index: 1;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        /* Header */
+        header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 20px 40px;
+            border-bottom: 1px solid var(--border);
+            background: rgba(0,0,0,0.8);
+            backdrop-filter: blur(20px);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .logo-symbol {
+            width: 36px;
+            height: 36px;
+            border: 1px solid var(--text);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .logo-text {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 18px;
+            font-weight: 500;
+            letter-spacing: 2px;
+        }
+
+        nav {
+            display: flex;
+            gap: 40px;
+        }
+
+        nav a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 13px;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+            transition: color 0.2s;
+        }
+
+        nav a:hover, nav a.active {
+            color: var(--text);
+        }
+
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+        }
+
+        .live-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 14px;
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            font-size: 11px;
+            letter-spacing: 1px;
+        }
+
+        .live-dot {
+            width: 6px;
+            height: 6px;
+            background: #fff;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        /* Main content */
+        main {
+            flex: 1;
+            display: grid;
+            grid-template-columns: 1fr 480px;
+            overflow: hidden;
+        }
+
+        /* Map section */
+        .map-section {
+            position: relative;
+            border-right: 1px solid var(--border);
+        }
+
+        #map {
+            width: 100%;
+            height: 100%;
+            background: var(--bg);
+        }
+
+        .leaflet-container {
+            background: var(--bg) !important;
+        }
+
+        /* Overlay stats */
+        .map-overlay {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            display: flex;
+            gap: 16px;
+            z-index: 1000;
+        }
+
+        .stat-card {
+            background: rgba(0,0,0,0.85);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border);
+            padding: 16px 24px;
+            min-width: 140px;
+        }
+
+        .stat-value {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 32px;
+            font-weight: 300;
+            letter-spacing: -1px;
+        }
+
+        .stat-label {
+            font-size: 10px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-top: 4px;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            background: var(--bg-secondary);
+            overflow: hidden;
+        }
+
+        .sidebar-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .sidebar-title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 13px;
+            font-weight: 500;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        /* Alerts list */
+        .alerts-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 8px;
+        }
+
+        .alert-item {
+            padding: 16px;
+            border: 1px solid var(--border);
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .alert-item:hover {
+            border-color: var(--border-light);
+            background: var(--bg-tertiary);
+        }
+
+        .alert-item.active {
+            border-color: var(--text);
+        }
+
+        .alert-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .alert-type {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-secondary);
+        }
+
+        .alert-time {
+            font-size: 10px;
+            color: var(--text-muted);
+        }
+
+        .alert-location {
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+
+        .alert-message {
+            font-size: 12px;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+
+        .alert-meta {
+            display: flex;
+            gap: 12px;
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid var(--border);
+        }
+
+        .alert-meta span {
+            font-size: 10px;
+            color: var(--text-muted);
+        }
+
+        /* Severity indicator */
+        .severity-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 6px;
+        }
+
+        .severity-dot.critical { background: #fff; }
+        .severity-dot.warning { background: #888; }
+        .severity-dot.safe { background: #444; }
+
+        /* Input section */
+        .input-section {
+            padding: 20px;
+            border-top: 1px solid var(--border);
+            background: var(--bg);
+        }
+
+        .input-section textarea {
+            width: 100%;
+            height: 80px;
+            background: var(--bg-tertiary);
+            border: 1px solid var(--border);
+            padding: 14px;
+            color: var(--text);
+            font-family: inherit;
+            font-size: 13px;
+            resize: none;
+            transition: border-color 0.2s;
+        }
+
+        .input-section textarea:focus {
+            outline: none;
+            border-color: var(--text);
+        }
+
+        .input-section textarea::placeholder {
+            color: var(--text-muted);
+        }
+
+        .input-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+        }
+
+        .btn {
+            flex: 1;
+            padding: 12px 20px;
+            background: var(--text);
+            color: var(--bg);
+            border: none;
+            font-family: inherit;
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: transparent;
+            color: var(--text);
+            border: 1px solid var(--border);
+        }
+
+        .btn-secondary:hover {
+            border-color: var(--text);
+        }
+
+        /* Bottom bar */
+        .bottom-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 40px;
+            border-top: 1px solid var(--border);
+            background: var(--bg);
+        }
+
+        .bottom-stats {
+            display: flex;
+            gap: 32px;
+        }
+
+        .bottom-stat {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .bottom-stat-value {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .bottom-stat-label {
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .system-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 11px;
+            color: var(--text-muted);
+        }
+
+        .status-dot {
+            width: 6px;
+            height: 6px;
+            background: #fff;
+            border-radius: 50%;
+        }
+
+        /* Minimal scrollbar */
+        ::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+        }
+
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .alert-item {
+            animation: fadeIn 0.3s ease forwards;
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            main {
+                grid-template-columns: 1fr;
+            }
+            
+            .sidebar {
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                height: 40vh;
+                border-top: 1px solid var(--border);
+            }
+            
+            nav {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Stars background -->
+    <div class="stars" id="stars"></div>
+
+    <div class="app">
+        <!-- Header -->
+        <header>
+            <div class="logo">
+                <div class="logo-symbol">◉</div>
+                <span class="logo-text">AEGIS</span>
+            </div>
+            
+            <nav>
+                <a href="#" class="active">INTELLIGENCE</a>
+                <a href="#">MAP</a>
+                <a href="#">ALERTS</a>
+                <a href="#">RESPONDERS</a>
+                <a href="#">SETTINGS</a>
+            </nav>
+            
+            <div class="header-right">
+                <div class="live-badge">
+                    <div class="live-dot"></div>
+                    <span>LIVE</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main content -->
+        <main>
+            <!-- Map -->
+            <div class="map-section">
+                <div class="map-overlay">
+                    <div class="stat-card">
+                        <div class="stat-value">247</div>
+                        <div class="stat-label">Active Incidents</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">89</div>
+                        <div class="stat-label">Verified</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">12</div>
+                        <div class="stat-label">Responders</div>
+                    </div>
+                </div>
+                <div id="map"></div>
+            </div>
+
+            <!-- Sidebar -->
+            <div class="sidebar">
+                <div class="sidebar-header">
+                    <span class="sidebar-title">Recent Alerts</span>
+                </div>
+                
+                <div class="alerts-list" id="alertsList">
+                    <!-- Alerts populated by JS -->
+                </div>
+
+                <div class="input-section">
+                    <textarea placeholder="Report an emergency situation..." id="emergencyInput"></textarea>
+                    <div class="input-actions">
+                        <button class="btn" onclick="submitReport()">Submit Report</button>
+                        <button class="btn btn-secondary" onclick="clearInput()">Clear</button>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Bottom bar -->
+        <div class="bottom-bar">
+            <div class="bottom-stats">
+                <div class="bottom-stat">
+                    <span class="bottom-stat-value">AI Processing</span>
+                    <span class="bottom-stat-label">Active</span>
+                </div>
+                <div class="bottom-stat">
+                    <span class="bottom-stat-value">APIs</span>
+                    <span class="bottom-stat-label">5 Connected</span>
+                </div>
+                <div class="bottom-stat">
+                    <span class="bottom-stat-value">Response</span>
+                    <span class="bottom-stat-label">&lt; 30s</span>
+                </div>
+            </div>
+            <div class="system-status">
+                <div class="status-dot"></div>
+                <span>All systems operational</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Generate stars
+        function createStars() {
+            const container = document.getElementById('stars');
+            for (let i = 0; i < 200; i++) {
+                const star = document.createElement('div');
+                star.className = 'star';
+                star.style.left = Math.random() * 100 + '%';
+                star.style.top = Math.random() * 100 + '%';
+                star.style.animationDelay = Math.random() * 8 + 's';
+                star.style.width = Math.random() * 2 + 1 + 'px';
+                star.style.height = star.style.width;
+                container.appendChild(star);
+            }
+        }
+        createStars();
+
+        // Initialize map
+        const map = L.map('map', {
+            center: [40, 0],
+            zoom: 3,
+            zoomControl: false,
+            attributionControl: false
+        });
+
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png', {
+            subdomains: 'abcd',
+            maxZoom: 19
+        }).addTo(map);
+
+        // Dark map markers
+        const markers = [];
+
+        // Alerts data - will be loaded from API
+        let alerts = [];
+
+        // Load alerts from API
+        async function loadAlerts() {
+            try {
+                const response = await fetch('http://localhost:8000/api/alerts');
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                const data = await response.json();
+                
+                // Convert API format to frontend format
+                alerts = data.alerts.map(alert => {
+                    // Map disaster_type to frontend type names
+                    const typeMap = {
+                        'earthquake': 'Seismic',
+                        'flood': 'Flood',
+                        'fire': 'Fire',
+                        'storm': 'Storm',
+                        'cyclone': 'Storm',
+                        'volcano': 'Volcano',
+                        'wildfire': 'Fire'
+                    };
+                    
+                    // Map severity_level to frontend severity
+                    const severityMap = {
+                        'CATASTROPHIC': 'critical',
+                        'CRITICAL': 'critical',
+                        'MODERATE': 'warning',
+                        'LOW': 'safe'
+                    };
+                    
+                    // Calculate relative time
+                    const getRelativeTime = (timestamp) => {
+                        const now = new Date();
+                        const alertTime = new Date(timestamp);
+                        const diffMs = now - alertTime;
+                        const diffMins = Math.floor(diffMs / 60000);
+                        const diffHours = Math.floor(diffMs / 3600000);
+                        const diffDays = Math.floor(diffMs / 86400000);
+                        
+                        if (diffMins < 1) return 'Just now';
+                        if (diffMins < 60) return `${diffMins} min ago`;
+                        if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`;
+                        return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`;
+                    };
+                    
+                    return {
+                        id: alert.alert_id,
+                        type: typeMap[alert.disaster_type.toLowerCase()] || 'Unknown',
+                        location: `${alert.location.city}, ${alert.location.country}`,
+                        message: alert.translated_message || alert.original_message,
+                        severity: severityMap[alert.severity_level] || 'safe',
+                        time: getRelativeTime(alert.timestamp),
+                        verified: alert.verification_status === 'verified',
+                        lat: alert.location.lat,
+                        lng: alert.location.lng
+                    };
+                });
+                
+                renderAlerts();
+                renderMarkers();
+            } catch (error) {
+                console.error('Error loading alerts:', error);
+                // Show error message to user
+                const container = document.getElementById('alertsList');
+                container.innerHTML = '<div style="padding: 16px; color: #888;">Failed to load alerts. Backend may be offline.</div>';
+            }
+        }
+
+        // Render alerts to sidebar
+        function renderAlerts() {
+            const container = document.getElementById('alertsList');
+            if (alerts.length === 0) {
+                container.innerHTML = '<div style="padding: 16px; color: #888;">No alerts yet. Submit an emergency report below.</div>';
+                return;
+            }
+            container.innerHTML = alerts.map(alert => `
+                <div class="alert-item" onclick="selectAlert('${alert.id}')" data-id="${alert.id}">
+                    <div class="alert-header">
+                        <span class="alert-type"><span class="severity-dot ${alert.severity}"></span>${alert.type}</span>
+                        <span class="alert-time">${alert.time}</span>
+                    </div>
+                    <div class="alert-location">${alert.location}</div>
+                    <div class="alert-message">${alert.message ? alert.message.substring(0, 80) + '...' : ''}</div>
+                    <div class="alert-meta">
+                        <span>${alert.verified ? '✓ Verified' : '○ Pending'}</span>
+                        <span>${alert.severity.toUpperCase()}</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Add markers
+        function renderMarkers() {
+            alerts.forEach(alert => {
+                const marker = L.circleMarker([alert.lat, alert.lng], {
+                    radius: 6,
+                    fillColor: '#fff',
+                    color: '#fff',
+                    weight: 1,
+                    opacity: 0.8,
+                    fillOpacity: 0.8
+                }).addTo(map);
+
+                marker.bindPopup(`
+                    <div style="color: #000; padding: 8px;">
+                        <strong>${alert.location}</strong>
+                        <p style="margin: 4px 0 0; font-size: 12px;">${alert.message.substring(0, 60)}...</p>
+                    </div>
+                `);
+            });
+        }
+
+        // Select alert
+        function selectAlert(id) {
+            document.querySelectorAll('.alert-item').forEach(el => el.classList.remove('active'));
+            document.querySelector(`[data-id="${id}"]`).classList.add('active');
+            
+            const alert = alerts.find(a => a.id === id);
+            if (alert) {
+                map.setView([alert.lat, alert.lng], 6, { animate: true });
+            }
+        }
+
+        // Submit report
+        async function submitReport() {
+            const input = document.getElementById('emergencyInput');
+            const message = input.value.trim();
+            
+            if (!message) {
+                alert('Please describe the emergency.');
+                return;
+            }
+            
+            // Show loading state
+            const btn = document.querySelector('.input-section .btn');
+            const originalText = btn.textContent;
+            btn.textContent = 'Submitting...';
+            btn.disabled = true;
+            
+            try {
+                const response = await fetch('http://localhost:8000/api/alerts', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        message: message,
+                        source: 'web'
+                    })
+                });
+                
+                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                const result = await response.json();
+                
+                // Show success message
+                alert(`Report submitted successfully. Alert ID: ${result.alert_id}`);
+                input.value = '';
+                
+                // Reload alerts to show the new one
+                await loadAlerts();
+            } catch (error) {
+                console.error('Error submitting report:', error);
+                alert('Failed to submit report. Please try again.');
+            } finally {
+                btn.textContent = originalText;
+                btn.disabled = false;
+            }
+        }
+
+        // Clear input
+        function clearInput() {
+            document.getElementById('emergencyInput').value = '';
+        }
+
+        // Initialize
+        loadAlerts();
+    </script>
+</body>
+</html>

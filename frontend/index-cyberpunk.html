@@ -1,0 +1,1055 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AEGIS Crisis Intelligence Terminal</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --void: #0a0a0f;
+            --surface: #12121a;
+            --surface-elevated: #1a1a24;
+            --border: #2a2a3a;
+            --border-active: #3d3d52;
+            --text-dim: #6b6b80;
+            --text-sec: #9898a8;
+            --text-pri: #e8e8f0;
+            --text-bright: #ffffff;
+            --cyan: #00d4ff;
+            --cyan-dim: #0099bb;
+            --cyan-glow: rgba(0, 212, 255, 0.15);
+            --critical: #ff3b3b;
+            --critical-glow: rgba(255, 59, 59, 0.15);
+            --warning: #ffaa00;
+            --warning-glow: rgba(255, 170, 0, 0.15);
+            --safe: #00ff88;
+            --safe-glow: rgba(0, 255, 136, 0.15);
+            --accent-purple: #a855f7;
+            --accent-pink: #ec4899;
+            --font-display: 'Space Grotesk', sans-serif;
+            --font-body: 'Outfit', sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            height: 100%;
+            overflow: hidden;
+        }
+
+        body {
+            font-family: var(--font-body);
+            background: var(--void);
+            color: var(--text-pri);
+            line-height: 1.6;
+        }
+
+        /* Animated background */
+        .bg-grid {
+            position: fixed;
+            inset: 0;
+            background-image: 
+                linear-gradient(rgba(0, 212, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 212, 255, 0.03) 1px, transparent 1px);
+            background-size: 60px 60px;
+            animation: gridMove 20s linear infinite;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        @keyframes gridMove {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(60px, 60px); }
+        }
+
+        .bg-glow {
+            position: fixed;
+            width: 600px;
+            height: 600px;
+            border-radius: 50%;
+            filter: blur(120px);
+            opacity: 0.3;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .bg-glow-1 {
+            top: -200px;
+            right: -100px;
+            background: var(--cyan);
+            animation: pulse1 8s ease-in-out infinite;
+        }
+
+        .bg-glow-2 {
+            bottom: -200px;
+            left: -100px;
+            background: var(--accent-purple);
+            animation: pulse2 10s ease-in-out infinite;
+        }
+
+        @keyframes pulse1 {
+            0%, 100% { opacity: 0.2; transform: scale(1); }
+            50% { opacity: 0.35; transform: scale(1.1); }
+        }
+
+        @keyframes pulse2 {
+            0%, 100% { opacity: 0.15; transform: scale(1); }
+            50% { opacity: 0.25; transform: scale(1.15); }
+        }
+
+        /* Layout */
+        .app-container {
+            position: relative;
+            z-index: 1;
+            display: grid;
+            grid-template-rows: auto 1fr;
+            height: 100vh;
+            padding: 20px;
+            gap: 20px;
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 24px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            backdrop-filter: blur(20px);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo-icon {
+            width: 44px;
+            height: 44px;
+            background: linear-gradient(135deg, var(--cyan), var(--accent-purple));
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            font-weight: 700;
+            color: white;
+            box-shadow: 0 4px 20px var(--cyan-glow);
+        }
+
+        .logo-text h1 {
+            font-family: var(--font-display);
+            font-size: 24px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            background: linear-gradient(135deg, var(--text-bright), var(--cyan));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .logo-text span {
+            font-size: 11px;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .header-stats {
+            display: flex;
+            gap: 32px;
+            align-items: center;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-family: var(--font-mono);
+            font-size: 28px;
+            font-weight: 600;
+            color: var(--cyan);
+            line-height: 1;
+        }
+
+        .stat-label {
+            font-size: 10px;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-top: 4px;
+        }
+
+        .live-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: var(--critical-glow);
+            border: 1px solid rgba(255, 59, 59, 0.3);
+            border-radius: 100px;
+        }
+
+        .live-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--critical);
+            border-radius: 50%;
+            animation: livePulse 1.5s ease-in-out infinite;
+        }
+
+        @keyframes livePulse {
+            0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(255, 59, 59, 0.5); }
+            50% { opacity: 0.7; box-shadow: 0 0 0 8px rgba(255, 59, 59, 0); }
+        }
+
+        .live-text {
+            font-family: var(--font-mono);
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--critical);
+            letter-spacing: 1px;
+        }
+
+        .clock {
+            font-family: var(--font-mono);
+            font-size: 12px;
+            color: var(--text-sec);
+        }
+
+        /* Main content */
+        .main-content {
+            display: grid;
+            grid-template-columns: 380px 1fr 320px;
+            gap: 20px;
+            min-height: 0;
+        }
+
+        /* Panels */
+        .panel {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .panel-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0;
+        }
+
+        .panel-title {
+            font-family: var(--font-display);
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-pri);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .panel-title::before {
+            content: '';
+            width: 3px;
+            height: 14px;
+            background: var(--cyan);
+            border-radius: 2px;
+        }
+
+        .panel-badge {
+            font-family: var(--font-mono);
+            font-size: 11px;
+            padding: 4px 10px;
+            background: var(--cyan-glow);
+            color: var(--cyan);
+            border-radius: 100px;
+        }
+
+        .panel-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+        }
+
+        /* Alert Cards */
+        .alert-card {
+            background: var(--surface-elevated);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .alert-card::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            border-radius: 12px 0 0 12px;
+        }
+
+        .alert-card.critical::before { background: var(--critical); }
+        .alert-card.warning::before { background: var(--warning); }
+        .alert-card.safe::before { background: var(--safe); }
+
+        .alert-card:hover {
+            border-color: var(--border-active);
+            transform: translateX(4px);
+        }
+
+        .alert-card.critical:hover {
+            box-shadow: 0 0 20px var(--critical-glow);
+        }
+
+        .alert-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+
+        .alert-type {
+            font-family: var(--font-mono);
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+
+        .alert-card.critical .alert-type {
+            background: var(--critical-glow);
+            color: var(--critical);
+        }
+
+        .alert-card.warning .alert-type {
+            background: var(--warning-glow);
+            color: var(--warning);
+        }
+
+        .alert-card.safe .alert-type {
+            background: var(--safe-glow);
+            color: var(--safe);
+        }
+
+        .alert-time {
+            font-family: var(--font-mono);
+            font-size: 10px;
+            color: var(--text-dim);
+        }
+
+        .alert-location {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--text-pri);
+            margin-bottom: 4px;
+        }
+
+        .alert-message {
+            font-size: 13px;
+            color: var(--text-sec);
+            line-height: 1.5;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .alert-meta {
+            display: flex;
+            gap: 16px;
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid var(--border);
+        }
+
+        .alert-meta-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 11px;
+            color: var(--text-dim);
+        }
+
+        .alert-meta-item svg {
+            width: 14px;
+            height: 14px;
+            opacity: 0.7;
+        }
+
+        /* Map */
+        #map {
+            height: 100%;
+            border-radius: 12px;
+            background: var(--surface);
+        }
+
+        .leaflet-container {
+            border-radius: 12px;
+            font-family: var(--font-body);
+        }
+
+        .custom-popup .leaflet-popup-content-wrapper {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            color: var(--text-pri);
+        }
+
+        /* Right sidebar */
+        .severity-bars {
+            padding: 16px;
+        }
+
+        .severity-bar {
+            margin-bottom: 20px;
+        }
+
+        .severity-bar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .severity-bar-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .severity-bar-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+
+        .severity-bar-dot.critical { background: var(--critical); box-shadow: 0 0 10px var(--critical); }
+        .severity-bar-dot.warning { background: var(--warning); box-shadow: 0 0 10px var(--warning); }
+        .severity-bar-dot.safe { background: var(--safe); box-shadow: 0 0 10px var(--safe); }
+
+        .severity-bar-value {
+            font-family: var(--font-mono);
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .severity-bar-track {
+            height: 6px;
+            background: var(--border);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .severity-bar-fill {
+            height: 100%;
+            border-radius: 3px;
+            transition: width 0.5s ease;
+        }
+
+        .severity-bar-fill.critical { background: var(--critical); }
+        .severity-bar-fill.warning { background: var(--warning); }
+        .severity-bar-fill.safe { background: var(--safe); }
+
+        /* Quick actions */
+        .quick-actions {
+            padding: 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        .action-btn {
+            width: 100%;
+            padding: 14px 20px;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            background: var(--surface-elevated);
+            color: var(--text-pri);
+            font-family: var(--font-body);
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: all 0.2s ease;
+            margin-bottom: 10px;
+        }
+
+        .action-btn:hover {
+            border-color: var(--cyan);
+            background: var(--cyan-glow);
+            color: var(--cyan);
+        }
+
+        .action-btn.primary {
+            background: linear-gradient(135deg, var(--cyan), var(--accent-purple));
+            border: none;
+            color: white;
+            font-weight: 600;
+        }
+
+        .action-btn.primary:hover {
+            box-shadow: 0 4px 20px var(--cyan-glow);
+            transform: translateY(-2px);
+        }
+
+        /* Chart container */
+        .chart-container {
+            padding: 16px;
+            height: 180px;
+        }
+
+        /* Emergency Form */
+        .emergency-form {
+            padding: 16px;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-dim);
+            margin-bottom: 8px;
+        }
+
+        .form-input, .form-textarea {
+            width: 100%;
+            padding: 12px 16px;
+            background: var(--surface-elevated);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-pri);
+            font-family: var(--font-body);
+            font-size: 14px;
+            transition: all 0.2s ease;
+        }
+
+        .form-input:focus, .form-textarea:focus {
+            outline: none;
+            border-color: var(--cyan);
+            box-shadow: 0 0 0 3px var(--cyan-glow);
+        }
+
+        .form-textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--border-active);
+        }
+
+        /* Animations */
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .alert-card {
+            animation: slideIn 0.4s ease forwards;
+        }
+
+        .alert-card:nth-child(1) { animation-delay: 0s; }
+        .alert-card:nth-child(2) { animation-delay: 0.1s; }
+        .alert-card:nth-child(3) { animation-delay: 0.2s; }
+        .alert-card:nth-child(4) { animation-delay: 0.3s; }
+        .alert-card:nth-child(5) { animation-delay: 0.4s; }
+
+        /* Pulse animation for new alerts */
+        @keyframes alertPulse {
+            0% { box-shadow: 0 0 0 0 var(--critical-glow); }
+            70% { box-shadow: 0 0 0 10px transparent; }
+            100% { box-shadow: 0 0 0 0 transparent; }
+        }
+
+        .alert-card.new {
+            animation: alertPulse 2s ease-in-out infinite;
+        }
+
+        /* Status indicators */
+        .status-online {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 11px;
+            color: var(--safe);
+        }
+
+        .status-online::before {
+            content: '';
+            width: 6px;
+            height: 6px;
+            background: var(--safe);
+            border-radius: 50%;
+        }
+
+        /* Loading state */
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+            color: var(--text-dim);
+        }
+
+        .spinner {
+            width: 24px;
+            height: 24px;
+            border: 2px solid var(--border);
+            border-top-color: var(--cyan);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-right: 12px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .main-content {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto 1fr auto;
+            }
+            
+            .header-stats {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-grid"></div>
+    <div class="bg-glow bg-glow-1"></div>
+    <div class="bg-glow bg-glow-2"></div>
+
+    <div class="app-container">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo">
+                <div class="logo-icon">◆</div>
+                <div class="logo-text">
+                    <h1>AEGIS</h1>
+                    <span>Crisis Intelligence Terminal</span>
+                </div>
+            </div>
+
+            <div class="header-stats">
+                <div class="stat-item">
+                    <div class="stat-value" id="totalAlerts">247</div>
+                    <div class="stat-label">Total Alerts</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="verifiedAlerts">89</div>
+                    <div class="stat-label">Verified</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="respondersActive">12</div>
+                    <div class="stat-label">Responders</div>
+                </div>
+            </div>
+
+            <div class="live-indicator">
+                <div class="live-dot"></div>
+                <span class="live-text">LIVE</span>
+                <span class="clock" id="clock">--:--:-- UTC</span>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Left: Alert Feed -->
+            <div class="panel">
+                <div class="panel-header">
+                    <span class="panel-title">Active Alerts</span>
+                    <span class="panel-badge" id="alertCount">12</span>
+                </div>
+                <div class="panel-content" id="alertFeed">
+                    <!-- Alerts populated by JS -->
+                </div>
+            </div>
+
+            <!-- Center: Map -->
+            <div class="panel">
+                <div class="panel-header">
+                    <span class="panel-title">Global Crisis Map</span>
+                    <div class="status-online">Systems Online</div>
+                </div>
+                <div class="panel-content" style="padding: 0; height: 100%;">
+                    <div id="map"></div>
+                </div>
+            </div>
+
+            <!-- Right: Stats & Actions -->
+            <div class="panel">
+                <div class="panel-header">
+                    <span class="panel-title">Severity Distribution</span>
+                </div>
+                <div class="panel-content">
+                    <div class="severity-bars">
+                        <div class="severity-bar">
+                            <div class="severity-bar-header">
+                                <span class="severity-bar-label">
+                                    <span class="severity-bar-dot critical"></span>
+                                    Critical
+                                </span>
+                                <span class="severity-bar-value" style="color: var(--critical);" id="criticalCount">8</span>
+                            </div>
+                            <div class="severity-bar-track">
+                                <div class="severity-bar-fill critical" id="criticalBar" style="width: 25%;"></div>
+                            </div>
+                        </div>
+                        <div class="severity-bar">
+                            <div class="severity-bar-header">
+                                <span class="severity-bar-label">
+                                    <span class="severity-bar-dot warning"></span>
+                                    Moderate
+                                </span>
+                                <span class="severity-bar-value" style="color: var(--warning);" id="warningCount">3</span>
+                            </div>
+                            <div class="severity-bar-track">
+                                <div class="severity-bar-fill warning" id="warningBar" style="width: 10%;"></div>
+                            </div>
+                        </div>
+                        <div class="severity-bar">
+                            <div class="severity-bar-header">
+                                <span class="severity-bar-label">
+                                    <span class="severity-bar-dot safe"></span>
+                                    Low
+                                </span>
+                                <span class="severity-bar-value" style="color: var(--safe);" id="safeCount">1</span>
+                            </div>
+                            <div class="severity-bar-track">
+                                <div class="severity-bar-fill safe" id="safeBar" style="width: 5%;"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="chart-container">
+                        <canvas id="trendChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="emergency-form">
+                    <div class="form-group">
+                        <label class="form-label">Report Emergency</label>
+                        <textarea class="form-textarea" id="emergencyMessage" placeholder="Describe the emergency situation..."></textarea>
+                    </div>
+                    <button class="action-btn primary" onclick="submitEmergency()">
+                        <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+                        </svg>
+                        Submit Report
+                    </button>
+                </div>
+
+                <div class="quick-actions">
+                    <button class="action-btn" onclick="broadcastAlert()">
+                        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path d="M11 5L6 9H2v6h4l5 4V5zM19.07 4.93a10 10 0 010 14.14M15.54 8.46a5 5 0 010 7.07"/>
+                        </svg>
+                        Voice Broadcast
+                    </button>
+                    <button class="action-btn" onclick="refreshData()">
+                        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15"/>
+                        </svg>
+                        Refresh Data
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize map
+        const map = L.map('map', {
+            center: [40.4168, -3.7038],
+            zoom: 4,
+            zoomControl: true
+        });
+
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+            subdomains: 'abcd',
+            maxZoom: 19
+        }).addTo(map);
+
+        // Demo alerts data
+        const alerts = [
+            {
+                id: 1,
+                type: 'earthquake',
+                location: 'Izmir, Turkey',
+                message: 'Magnitude 5.8 earthquake reported in the Aegean Sea region. Multiple buildings damaged in coastal areas.',
+                severity: 'critical',
+                time: '2 min ago',
+                verified: true,
+                lat: 38.4192,
+                lng: 27.1287
+            },
+            {
+                id: 2,
+                type: 'flood',
+                location: 'Valencia, Spain',
+                message: 'Flash flooding after heavy rainfall. Several streets impassable, vehicles stranded.',
+                severity: 'critical',
+                time: '15 min ago',
+                verified: true,
+                lat: 39.4699,
+                lng: -0.3763
+            },
+            {
+                id: 3,
+                type: 'fire',
+                location: 'Los Angeles, USA',
+                message: 'Wildfire spreading in the hills. Evacuation orders issued for 3 neighborhoods.',
+                severity: 'critical',
+                time: '28 min ago',
+                verified: true,
+                lat: 34.0522,
+                lng: -118.2437
+            },
+            {
+                id: 4,
+                type: 'medical',
+                location: 'Rome, Italy',
+                message: 'Mass casualty incident at central station. Multiple injuries reported.',
+                severity: 'warning',
+                time: '45 min ago',
+                verified: false,
+                lat: 41.9028,
+                lng: 12.4964
+            },
+            {
+                id: 5,
+                type: 'storm',
+                location: 'Lisbon, Portugal',
+                message: 'Severe storm warning. Coastal flooding expected. Tourists advised to stay indoors.',
+                severity: 'warning',
+                time: '1 hour ago',
+                verified: true,
+                lat: 38.7223,
+                lng: -9.1393
+            },
+            {
+                id: 6,
+                type: 'earthquake',
+                location: 'Athens, Greece',
+                message: 'Minor tremor felt in the city center. No significant damage reported.',
+                severity: 'safe',
+                time: '2 hours ago',
+                verified: true,
+                lat: 37.9838,
+                lng: 23.7275
+            }
+        ];
+
+        // Render alerts
+        function renderAlerts() {
+            const container = document.getElementById('alertFeed');
+            container.innerHTML = alerts.map(alert => `
+                <div class="alert-card ${alert.severity}" onclick="selectAlert(${alert.id})">
+                    <div class="alert-header">
+                        <span class="alert-type">${alert.type}</span>
+                        <span class="alert-time">${alert.time}</span>
+                    </div>
+                    <div class="alert-location">${alert.location}</div>
+                    <div class="alert-message">${alert.message}</div>
+                    <div class="alert-meta">
+                        <div class="alert-meta-item">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                            </svg>
+                            ${alert.verified ? 'Verified' : 'Pending'}
+                        </div>
+                        <div class="alert-meta-item">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
+                            </svg>
+                            View on Map
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Add markers to map
+        function renderMarkers() {
+            alerts.forEach(alert => {
+                const colors = {
+                    critical: '#ff3b3b',
+                    warning: '#ffaa00',
+                    safe: '#00ff88'
+                };
+                
+                const marker = L.circleMarker([alert.lat, alert.lng], {
+                    radius: 10,
+                    fillColor: colors[alert.severity],
+                    color: colors[alert.severity],
+                    weight: 2,
+                    opacity: 1,
+                    fillOpacity: 0.6
+                }).addTo(map);
+
+                marker.bindPopup(`
+                    <div style="padding: 8px; min-width: 200px;">
+                        <strong style="color: ${colors[alert.severity]}; text-transform: uppercase; font-size: 11px;">${alert.severity}</strong>
+                        <h3 style="margin: 8px 0 4px; font-size: 14px;">${alert.location}</h3>
+                        <p style="font-size: 12px; color: #666; margin: 0;">${alert.message.substring(0, 80)}...</p>
+                    </div>
+                `, { className: 'custom-popup' });
+            });
+        }
+
+        // Initialize chart
+        function initChart() {
+            const ctx = document.getElementById('trendChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00', '24:00'],
+                    datasets: [{
+                        label: 'Alerts',
+                        data: [12, 19, 8, 15, 22, 18, 12],
+                        borderColor: '#00d4ff',
+                        backgroundColor: 'rgba(0, 212, 255, 0.1)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 0,
+                        pointHoverRadius: 6,
+                        pointHoverBackgroundColor: '#00d4ff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        x: {
+                            grid: { display: false },
+                            ticks: { 
+                                color: '#6b6b80',
+                                font: { size: 10 }
+                            }
+                        },
+                        y: {
+                            grid: { color: 'rgba(255,255,255,0.05)' },
+                            ticks: { 
+                                color: '#6b6b80',
+                                font: { size: 10 }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Update clock
+        function updateClock() {
+            const now = new Date();
+            const hours = String(now.getUTCHours()).padStart(2, '0');
+            const minutes = String(now.getUTCMinutes()).padStart(2, '0');
+            const seconds = String(now.getUTCSeconds()).padStart(2, '0');
+            document.getElementById('clock').textContent = `${hours}:${minutes}:${seconds} UTC`;
+        }
+
+        // Select alert
+        function selectAlert(id) {
+            const alert = alerts.find(a => a.id === id);
+            if (alert) {
+                map.setView([alert.lat, alert.lng], 8, { animate: true });
+            }
+        }
+
+        // Submit emergency
+        function submitEmergency() {
+            const message = document.getElementById('emergencyMessage').value;
+            if (message.trim()) {
+                alert('Emergency report submitted! AI agents are processing your report.');
+                document.getElementById('emergencyMessage').value = '';
+            } else {
+                alert('Please describe the emergency situation.');
+            }
+        }
+
+        // Broadcast alert
+        function broadcastAlert() {
+            alert('Voice broadcast initiated to all connected responders in affected areas.');
+        }
+
+        // Refresh data
+        function refreshData() {
+            alert('Refreshing data from all disaster APIs...');
+        }
+
+        // Initialize
+        renderAlerts();
+        renderMarkers();
+        initChart();
+        updateClock();
+        setInterval(updateClock, 1000);
+    </script>
+</body>
+</html>

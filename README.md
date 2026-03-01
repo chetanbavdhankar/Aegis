@@ -60,8 +60,15 @@ Aegis/
 │   ├── tts_gateway.py      # TTS dispatch (ElevenLabs / Text-Only)
 │   ├── bot.py              # Telegram bot (Process 1)
 │   └── app.py              # Flask server (Process 2)
+├── frontend/
+│   ├── index.html          # Primary dashboard (standalone, API-connected)
+│   ├── myversion.html      # Prototype: Tactical OS terminal theme
+│   ├── mynewversion.html   # Prototype: Modern glass UI theme
+│   ├── index-cyberpunk.html  # Prototype: Cyberpunk neon teal theme
+│   ├── cyberpunkversion.html # Prototype: Cyberpunk neon amber theme
+│   └── README.md           # Frontend documentation
 ├── templates/
-│   └── index.html          # Leaflet.js triage dashboard
+│   └── index.html          # Flask-served Leaflet.js triage dashboard
 ├── .env.example            # Template for environment variables
 ├── requirements.txt        # Python dependencies
 └── README.md               # This file

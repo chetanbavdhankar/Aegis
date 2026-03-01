@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AEGIS // Crisis Management Platform</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Roboto+Mono:wght@400;500;600&display=swap"
+        rel="stylesheet">
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            /* Professional Dark Mode Palette (Slate) */
+            --bg-main: #0f172a;
+            --surface: #1e293b;
+            --surface-elevated: #334155;
+            --border: #475569;
+
+            --text-dim: #94a3b8;
+            --text-sec: #cbd5e1;
+            --text-pri: #f8fafc;
+            --text-dark: #0f172a;
+
+            --primary: #3b82f6;
+            --primary-bg: rgba(59, 130, 246, 0.1);
+
+            --critical: #ef4444;
+            --critical-bg: rgba(239, 68, 68, 0.1);
+
+            --warning: #f59e0b;
+            --warning-bg: rgba(245, 158, 11, 0.1);
+
+            --safe: #10b981;
+            --safe-bg: rgba(16, 185, 129, 0.1);
+
+            --font-main: 'Inter', sans-serif;
+            --font-mono: 'Roboto Mono', monospace;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            height: 100%;
+            overflow: hidden;
+            background-color: var(--bg-main);
+            color: var(--text-pri);
+            font-family: var(--font-main);
+            font-size: 14px;
+        }
+
+        /* --- LAYOUT --- */
+        .app-container {
+            display: grid;
+            grid-template-rows: auto 1fr;
+            height: 100vh;
+            padding: 16px;
+            gap: 16px;
+        }
+
+        /* Standard Panels */
+        .panel {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 24px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .logo-icon {
+            width: 36px;
+            height: 36px;
+            background: var(--primary);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 18px;
+        }
+
+        .logo-text h1 {
+            font-size: 18px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            color: var(--text-pri);
+            line-height: 1.2;
+        }
+
+        .logo-text span {
+            font-size: 12px;
+            color: var(--text-dim);
+            font-weight: 500;
+        }
+
+        .header-stats {
+            display: flex;
+            gap: 32px;
+            align-items: center;
+            padding: 0 24px;
+            border-left: 1px solid var(--border);
+            border-right: 1px solid var(--border);
+        }
+
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .stat-value {
+            font-family: var(--font-mono);
+            font-size: 24px;
+            font-weight: 600;
+            line-height: 1;
+        }
+
+        .stat-label {
+            font-size: 11px;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-top: 4px;
+            font-weight: 600;
+        }
+
+        .sys-status {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 4px;
+        }
+
+        .live-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 4px 10px;
+            background: var(--critical-bg);
+            border-radius: 12px;
+        }
+
+        .live-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--critical);
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4);
+            }
+
+            70% {
+                box-shadow: 0 0 0 6px rgba(239, 68, 68, 0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+            }
+        }
+
+        .live-text {
+            font-size: 11px;
+            font-weight: 600;
+            color: var(--critical);
+            letter-spacing: 0.5px;
+        }
+
+        .clock {
+            font-family: var(--font-mono);
+            font-size: 12px;
+            color: var(--text-sec);
+            font-weight: 500;
+        }
+
+        /* Main content */
+        .main-content {
+            display: grid;
+            grid-template-columns: 380px 1fr 340px;
+            gap: 16px;
+            min-height: 0;
+        }
+
+        .panel-header {
+            padding: 12px 20px;
+            border-bottom: 1px solid var(--border);
+            background: rgba(255, 255, 255, 0.02);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .panel-title {
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-pri);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .panel-title::before {
+            content: '';
+            width: 8px;
+            height: 8px;
+            background: var(--primary);
+            border-radius: 50%;
+        }
+
+        .panel-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+            position: relative;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--surface);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--text-dim);
+        }
+
+        /* Alert Cards */
+        .alert-card {
+            background: var(--surface-elevated);
+            border: 1px solid var(--border);
+            border-left: 4px solid var(--text-dim);
+            border-radius: 6px;
+            padding: 16px;
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: transform 0.1s, box-shadow 0.1s;
+        }
+
+        .alert-card.critical {
+            border-left-color: var(--critical);
+        }
+
+        .alert-card.warning {
+            border-left-color: var(--warning);
+        }
+
+        .alert-card.safe {
+            border-left-color: var(--safe);
+        }
+
+        .alert-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            background: #3f4e66;
+        }
+
+        .alert-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+
+        .alert-type {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-weight: 600;
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .alert-card.critical .alert-type {
+            color: var(--critical);
+            background: var(--critical-bg);
+        }
+
+        .alert-card.warning .alert-type {
+            color: var(--warning);
+            background: var(--warning-bg);
+        }
+
+        .alert-card.safe .alert-type {
+            color: var(--safe);
+            background: var(--safe-bg);
+        }
+
+        .alert-id {
+            font-family: var(--font-mono);
+            font-size: 11px;
+            color: var(--text-dim);
+        }
+
+        .alert-location {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--text-pri);
+            margin-bottom: 6px;
+        }
+
+        .alert-message {
+            font-size: 13px;
+            color: var(--text-sec);
+            line-height: 1.5;
+            margin-bottom: 12px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .alert-meta {
+            display: flex;
+            justify-content: space-between;
+            font-family: var(--font-mono);
+            font-size: 11px;
+            color: var(--text-dim);
+            border-top: 1px dashed var(--border);
+            padding-top: 12px;
+        }
+
+        /* Map Container */
+        #map {
+            height: 100%;
+            width: 100%;
+            background: var(--bg-main);
+            border-radius: 4px;
+        }
+
+        /* Custom Leaflet overrides */
+        .leaflet-popup-content-wrapper {
+            background: var(--surface-elevated) !important;
+            border: 1px solid var(--border);
+            border-radius: 6px !important;
+            color: var(--text-pri) !important;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3) !important;
+        }
+
+        .leaflet-popup-tip {
+            background: var(--surface-elevated) !important;
+        }
+
+        .pulse-marker {
+            border-radius: 50%;
+            box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.5);
+            animation: markerPulse 2s infinite;
+        }
+
+        @keyframes markerPulse {
+            70% {
+                box-shadow: 0 0 0 10px rgba(255, 255, 255, 0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(255, 255, 255, 0);
+            }
+        }
+
+        /* Right Panel Modules */
+        .module-section {
+            margin-bottom: 24px;
+        }
+
+        .module-label {
+            font-size: 12px;
+            color: var(--text-dim);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 12px;
+        }
+
+        /* Progress Bars */
+        .progress-item {
+            margin-bottom: 12px;
+        }
+
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            font-weight: 500;
+            margin-bottom: 6px;
+        }
+
+        .progress-track {
+            height: 6px;
+            background: var(--bg-main);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            border-radius: 3px;
+        }
+
+        /* Chart */
+        .chart-container {
+            height: 180px;
+            margin-bottom: 24px;
+        }
+
+        /* Action Buttons */
+        .action-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 10px;
+        }
+
+        .btn {
+            background: var(--surface-elevated);
+            border: 1px solid var(--border);
+            color: var(--text-pri);
+            font-family: var(--font-main);
+            font-size: 13px;
+            font-weight: 500;
+            padding: 10px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .btn:hover {
+            background: var(--border);
+        }
+
+        .btn.primary {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: white;
+        }
+
+        .btn.primary:hover {
+            background: #2563eb;
+            /* Darker blue */
+        }
+
+        /* Toast Notifications */
+        #toast-container {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            z-index: 10000;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .toast {
+            background: var(--surface-elevated);
+            border: 1px solid var(--border);
+            border-left: 4px solid var(--primary);
+            color: var(--text-pri);
+            padding: 12px 20px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 500;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2);
+            transform: translateX(120%);
+            opacity: 0;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .toast.show {
+            transform: translateX(0);
+            opacity: 1;
+        }
+
+        .toast.error {
+            border-left-color: var(--critical);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo">
+                <div class="logo-icon">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                        stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+                    </svg>
+                </div>
+                <div class="logo-text">
+                    <h1>AEGIS</h1>
+                    <span>Crisis Management Platform</span>
+                </div>
+            </div>
+
+            <div class="header-stats">
+                <div class="stat-item">
+                    <div class="stat-value">247</div>
+                    <div class="stat-label">Active Incidents</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" style="color: var(--primary);">89</div>
+                    <div class="stat-label">Units Deployed</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" style="color: var(--safe);">98%</div>
+                    <div class="stat-label">System Readiness</div>
+                </div>
+            </div>
+
+            <div class="sys-status">
+                <div class="live-indicator">
+                    <div class="live-dot"></div>
+                    <span class="live-text">LIVE MONITORING</span>
+                </div>
+                <div class="clock" id="clock">--:--:-- UTC</div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <!-- Left: Incident Feed -->
+            <div class="panel">
+                <div class="panel-header">
+                    <span class="panel-title">Incident Feed</span>
+                    <span style="font-size: 11px; color: var(--text-dim); font-weight: 500;">Last synced: Just
+                        now</span>
+                </div>
+                <div class="panel-content">
+                    <div id="alertFeed">
+                        <!-- Alerts populated by JS -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Center: Map -->
+            <div class="panel">
+                <div id="map"></div>
+            </div>
+
+            <!-- Right: Analytics & Command -->
+            <div class="panel">
+                <div class="panel-header">
+                    <span class="panel-title">Dashboard Overview</span>
+                </div>
+                <div class="panel-content">
+
+                    <div class="module-section">
+                        <div class="module-label">Severity Breakdown</div>
+
+                        <div class="progress-item">
+                            <div class="progress-header">
+                                <span style="color: var(--critical);">Critical</span>
+                                <span>32%</span>
+                            </div>
+                            <div class="progress-track">
+                                <div class="progress-fill" style="width: 32%; background: var(--critical);"></div>
+                            </div>
+                        </div>
+
+                        <div class="progress-item">
+                            <div class="progress-header">
+                                <span style="color: var(--warning);">Elevated</span>
+                                <span>45%</span>
+                            </div>
+                            <div class="progress-track">
+                                <div class="progress-fill" style="width: 45%; background: var(--warning);"></div>
+                            </div>
+                        </div>
+
+                        <div class="progress-item">
+                            <div class="progress-header">
+                                <span style="color: var(--safe);">Nominal</span>
+                                <span>23%</span>
+                            </div>
+                            <div class="progress-track">
+                                <div class="progress-fill" style="width: 23%; background: var(--safe);"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="module-section">
+                        <div class="module-label">Incident Volume (24h)</div>
+                        <div class="chart-container">
+                            <canvas id="trendChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="module-section">
+                        <div class="module-label">Quick Actions</div>
+                        <div class="action-grid">
+                            <button class="btn primary" onclick="showToast('New report form opened.', 'info')">
+                                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"
+                                    viewBox="0 0 24 24">
+                                    <path d="M12 5v14M5 12h14" />
+                                </svg>
+                                Log New Incident
+                            </button>
+                            <button class="btn" onclick="showToast('Dispatch protocols initiated.', 'info')">
+                                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"
+                                    viewBox="0 0 24 24">
+                                    <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" />
+                                </svg>
+                                Deploy Response Team
+                            </button>
+                            <button class="btn" onclick="showToast('Generating Situation Report (PDF)...', 'info')">
+                                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"
+                                    viewBox="0 0 24 24">
+                                    <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" />
+                                </svg>
+                                Export SitRep
+                            </button>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notifications Container -->
+    <div id="toast-container"></div>
+
+    <script>
+        // --- TOAST NOTIFICATIONS ---
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.textContent = message;
+
+            container.appendChild(toast);
+
+            setTimeout(() => toast.classList.add('show'), 10);
+
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // --- MAP INITIALIZATION ---
+        const map = L.map('map', {
+            center: [40.4168, -3.7038],
+            zoom: 4,
+            zoomControl: true,
+            attributionControl: false
+        });
+
+        // Professional dark map with labels for actual geography context
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+            subdomains: 'abcd',
+            maxZoom: 19
+        }).addTo(map);
+
+        L.control.attribution({ position: 'bottomleft' }).addTo(map);
+
+        // --- DATA ---
+        const alerts = [
+            { id: 'INC-2026-892', type: 'Geological', location: 'Izmir, Turkey', message: 'Magnitude 5.8 earthquake detected. Reports of structural damage in coastal districts.', severity: 'critical', time: '14:32 UTC', lat: 38.4192, lng: 27.1287 },
+            { id: 'INC-2026-891', type: 'Meteorological', location: 'Valencia, Spain', message: 'Severe flash flooding. Main transportation arteries obstructed. Emergency services engaged.', severity: 'critical', time: '13:15 UTC', lat: 39.4699, lng: -0.3763 },
+            { id: 'INC-2026-890', type: 'Wildfire', location: 'Los Angeles, USA', message: 'Uncontrolled brush fire expanding due to high winds. Evacuation orders in effect.', severity: 'critical', time: '11:45 UTC', lat: 34.0522, lng: -118.2437 },
+            { id: 'INC-2026-889', type: 'Public Health', location: 'Rome, Italy', message: 'Mass casualty incident at central transit hub. Medical units dispatched.', severity: 'warning', time: '10:10 UTC', lat: 41.9028, lng: 12.4964 },
+            { id: 'INC-2026-888', type: 'Meteorological', location: 'Lisbon, Portugal', message: 'Coastal storm warning issued. Anticipated surge levels exceed normal parameters.', severity: 'warning', time: '09:05 UTC', lat: 38.7223, lng: -9.1393 },
+            { id: 'INC-2026-887', type: 'Geological', location: 'Athens, Greece', message: 'Minor seismic activity recorded. No structural damage reported. Monitoring ongoing.', severity: 'safe', time: '06:30 UTC', lat: 37.9838, lng: 23.7275 }
+        ];
+
+        // --- RENDER ALERTS & MARKERS ---
+        function renderInterface() {
+            const container = document.getElementById('alertFeed');
+            container.innerHTML = alerts.map(alert => `
+                <div class="alert-card ${alert.severity}" onclick="focusTarget(${alert.lat}, ${alert.lng}, '${alert.id}')">
+                    <div class="alert-header">
+                        <span class="alert-type">${alert.type}</span>
+                        <span class="alert-id">${alert.time}</span>
+                    </div>
+                    <div class="alert-location">${alert.location}</div>
+                    <div class="alert-message">${alert.message}</div>
+                    <div class="alert-meta">
+                        <span>ID: ${alert.id}</span>
+                        <span style="color: var(--primary);">View Map &rarr;</span>
+                    </div>
+                </div>
+            `).join('');
+
+            // Markers
+            alerts.forEach(alert => {
+                const colors = { critical: '#ef4444', warning: '#f59e0b', safe: '#10b981' };
+                const color = colors[alert.severity];
+
+                const html = `<div class="pulse-marker" style="width: 14px; height: 14px; background: ${color}; border: 2px solid white;"></div>`;
+
+                const customIcon = L.divIcon({
+                    className: 'custom-div-icon',
+                    html: html,
+                    iconSize: [14, 14],
+                    iconAnchor: [7, 7]
+                });
+
+                const marker = L.marker([alert.lat, alert.lng], { icon: customIcon }).addTo(map);
+
+                marker.bindPopup(`
+                    <div style="font-family: 'Inter', sans-serif; padding: 4px;">
+                        <strong style="color: ${color}; font-size: 11px; text-transform: uppercase;">${alert.severity} Priority</strong>
+                        <h3 style="margin: 6px 0 4px 0; font-size: 14px; font-weight: 600;">${alert.location}</h3>
+                        <p style="font-size: 12px; color: #cbd5e1; margin: 0; line-height: 1.4;">${alert.message}</p>
+                    </div>
+                `);
+            });
+        }
+
+        // --- INTERACTION ---
+        function focusTarget(lat, lng, id) {
+            map.flyTo([lat, lng], 8, { duration: 1.5 });
+            showToast(`Tracking incident ${id} in requested sector.`);
+        }
+
+        // --- CHART INITIALIZATION ---
+        function initChart() {
+            const ctx = document.getElementById('trendChart').getContext('2d');
+
+            // Professional soft gradient
+            let gradient = ctx.createLinearGradient(0, 0, 0, 200);
+            gradient.addColorStop(0, 'rgba(59, 130, 246, 0.4)');
+            gradient.addColorStop(1, 'rgba(59, 130, 246, 0.0)');
+
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['00:00', '04:00', '08:00', '12:00', '16:00', '20:00', 'Now'],
+                    datasets: [{
+                        label: 'Incidents Reported',
+                        data: [12, 19, 15, 25, 22, 30, 24],
+                        borderColor: '#3b82f6',
+                        backgroundColor: gradient,
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 4,
+                        pointBackgroundColor: '#1e293b',
+                        pointBorderColor: '#3b82f6',
+                        pointBorderWidth: 2,
+                        pointHoverRadius: 6,
+                        pointHoverBackgroundColor: '#3b82f6'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: '#94a3b8', font: { family: "'Inter'", size: 11 } }
+                        },
+                        y: {
+                            grid: { color: 'rgba(255,255,255,0.05)' },
+                            ticks: { color: '#94a3b8', font: { family: "'Inter'", size: 11 } }
+                        }
+                    },
+                    interaction: {
+                        intersect: false,
+                        mode: 'index',
+                    }
+                }
+            });
+        }
+
+        // --- REAL-TIME DATA SIMULATION ---
+        function updateClock() {
+            const now = new Date();
+            const hours = String(now.getUTCHours()).padStart(2, '0');
+            const minutes = String(now.getUTCMinutes()).padStart(2, '0');
+            const seconds = String(now.getUTCSeconds()).padStart(2, '0');
+            document.getElementById('clock').textContent = `${hours}:${minutes}:${seconds} UTC`;
+        }
+
+        // --- INIT ---
+        window.onload = () => {
+            renderInterface();
+            initChart();
+            updateClock();
+            setInterval(updateClock, 1000);
+        };
+    </script>
+</body>
+
+</html>
